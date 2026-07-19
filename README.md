@@ -9,6 +9,8 @@ Professional plugin for preparing 3D assets for mobile games in Blender.
 ![Claude%20Code](https://img.shields.io/badge/Claude%20Code-supported-lightgrey.svg)
 ![Codex%20CLI](https://img.shields.io/badge/Codex%20CLI-supported-lightgrey.svg)
 ![Kimi](https://img.shields.io/badge/Kimi%20K2-supported-lightgrey.svg)
+[![Node.js Version](https://img.shields.io/badge/Node.js-22-brightgreen.svg)](https://nodejs.org/en)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/SSobol77/astradesk/actions)
 
 ## Documentation
 
