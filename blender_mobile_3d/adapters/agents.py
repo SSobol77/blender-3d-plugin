@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from blender_mobile_3d.adapters.blender_mcp import default_socket_path
-
-
 AGENT_NOTES = {
     "hermes": "Use blender-mcp execute_code or shell against localhost:9876.",
     "claude_code": "Use the terminal tool; drive Blender CLI or Python scripts.",

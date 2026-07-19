@@ -4,12 +4,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
-from blender_mobile_3d.config.loader import available_presets, load_preset
-from blender_mobile_3d.core.errors import BlenderMobileError
+from blender_mobile_3d.config.loader import available_presets
 from blender_mobile_3d.version import VERSION
 
 

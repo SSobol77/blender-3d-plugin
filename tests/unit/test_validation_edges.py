@@ -14,7 +14,7 @@ from blender_mobile_3d.core.validation import ValidationEngine
             [],
         ),
         (
-            {"material_limit": 1, "tri_limit": 5},
+            {"material_limit": 1, "tri_limit": 5, "tex_max": 512, "bone_limit": 60},
             {"triangle_count": 500, "texture_max": 2000, "bone_count": 1000},
             ["TRIANGLE_OVERAGE", "TEXTURE_SIZE_OVERAGE", "BONE_BUDGET_OVERAGE"],
         ),

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, List
+from datetime import UTC, datetime
+from typing import Any
 
 
 class Diagnostic:
@@ -24,7 +24,7 @@ class Diagnostic:
         self.measured = measured
         self.limit = limit
         self.remediation = remediation
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -41,7 +41,7 @@ class Diagnostic:
 
 class Report:
     def __init__(self) -> None:
-        self.diagnostics: List[Diagnostic] = []
+        self.diagnostics: list[Diagnostic] = []
 
     def add(self, diagnostic: Diagnostic) -> None:
         self.diagnostics.append(diagnostic)

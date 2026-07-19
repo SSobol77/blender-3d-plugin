@@ -1,24 +1,26 @@
-"""Blender add-on class registration helpers."""
+"""Blender add-on registration helpers shared by operator modules."""
 
 from __future__ import annotations
 
 from typing import Any
 
-classes: list[Any] = []
-
-
-def register_addon() -> None:
-    pass
-
-
-def unregister_addon() -> None:
-    pass
+from blender_mobile_3d.core.blender import require_bpy
 
 
 def get_context() -> Any:
-    try:
-        import bpy  # type: ignore
+    """Return the live Blender context."""
+    return require_bpy().context
 
-        return bpy.context
-    except Exception as exc:
-        raise RuntimeError("Blender context is unavailable outside Blender.") from exc
+
+def register_addon() -> None:
+    """Register the add-on UI (delegates to the UI module)."""
+    from blender_mobile_3d.operators.blender_ui import register_addon as _register
+
+    _register()
+
+
+def unregister_addon() -> None:
+    """Unregister the add-on UI (delegates to the UI module)."""
+    from blender_mobile_3d.operators.blender_ui import unregister_addon as _unregister
+
+    _unregister()

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
-from blender_mobile_3d.config.models import Limits, ExportOptions, PathConfig, Preset
+from blender_mobile_3d.config.models import Preset
 
 
 def test_defaults() -> None:

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from blender_mobile_3d.core.paths import safe_join
 from blender_mobile_3d.core.errors import PathSafetyError
+from blender_mobile_3d.core.paths import safe_join
 
 
 def test_safe_join_allowed(tmp_path: Path) -> None:

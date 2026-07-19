@@ -1,4 +1,4 @@
-"""Production package initialization with safe Blender import."""
+"""Blender Mobile 3D production package and add-on entrypoint."""
 
 from __future__ import annotations
 
@@ -18,37 +18,30 @@ bl_info = {
 
 __version__ = VERSION
 
-try:  # pragma: no cover
-    import bpy  # type: ignore
-except Exception:
-    bpy = None  # type: ignore[assignment]
 
-if bpy is not None:
+def register() -> None:
+    """Register the add-on inside Blender.
+
+    Raises a descriptive error when the Blender runtime is unavailable.
+    """
     try:
-        from blender_mobile_3d.operators.blender_ui import (  # type: ignore
-            unregister_addon,
-            register_addon,
-        )
+        from blender_mobile_3d.operators.blender_ui import register_addon
+    except ImportError as exc:
+        raise RuntimeError(
+            "bpy is unavailable; this add-on can only be registered inside Blender."
+        ) from exc
+    register_addon()
 
-        def register() -> None:
-            register_addon()
 
-        def unregister() -> None:
-            unregister_addon()
-    except Exception:
-
-        def register() -> None:  # type: ignore
-            raise RuntimeError("Blender UI registration unavailable.")
-
-        def unregister() -> None:  # type: ignore
-            pass
-else:
-
-    def register() -> None:  # type: ignore
-        raise RuntimeError("bpy is unavailable; this package requires Blender.")
-
-    def unregister() -> None:  # type: ignore
-        pass
+def unregister() -> None:
+    """Unregister the add-on inside Blender; idempotent and symmetric."""
+    try:
+        from blender_mobile_3d.operators.blender_ui import unregister_addon
+    except ImportError:
+        # Registration never happened (bpy unavailable), so there is
+        # nothing to tear down; unregister stays idempotent.
+        return
+    unregister_addon()
 
 
 __all__ = ["__version__", "register", "unregister", "bl_info"]

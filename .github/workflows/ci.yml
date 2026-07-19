@@ -21,11 +21,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install -q -e '.[dev]'
+      - run: python -m pip install -q -e '.[dev]' -e installers/python
       - run: ruff format --check blender_mobile_3d installers/python tests scripts
       - run: ruff check blender_mobile_3d installers/python tests scripts
-      - run: mypy blender_mobile_3d --ignore-missing-imports
-      - run: pytest -q --cov=blender_mobile_3d --cov-report=xml --cov-fail-under=80
+      - run: mypy blender_mobile_3d
+      - run: >
+          pytest
+          --cov=blender_mobile_3d
+          --cov=blender_mobile_3d_installer
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=90
       - run: |
           python -m pip install -q build twine
           python -m build installers/python
@@ -69,38 +76,76 @@ jobs:
   security:
     name: security
     runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: "8.24.3"
+      GITLEAKS_SHA256: "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python -m pip install -q -e '.[dev]'
-      - run: pip-audit -q
-      - run: ruff check blender_mobile_3d installers/python tests scripts --select S
-      - run: gitleaks detect --no-git --source="${{ github.workspace }}" -r exit-code || echo "gitleaks not configured; secret scan skipped with non-zero exit code"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -q -e '.[dev]' -e installers/python
+      - run: python -m pip install -q pip-audit
+      - run: python -m pip_audit
+      - run: ruff check blender_mobile_3d installers/python/src scripts --select S
+      - name: Secret scan (gitleaks, pinned)
+        run: |
+          curl -sSfL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks dir . --no-banner --redact
 
   blender-regression:
     name: Blender headless regression
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: wget -q https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
-      - run: tar -xf blender-4.3.2-linux-x64.tar.xz
-      - run: sudo mv blender-4.3.2-linux-x64 /opt/blender || true && sudo ln -sf /opt/blender/blender /usr/local/bin/blender || true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
       - run: python -m pip install -q -e '.[dev]'
-      - run: BLENDER_USER_CONFIG=/tmp/blender-ci blender --background --factory-startup --python scripts/smoke_test_blender.py --python scripts/verify_addon_state.py
+      - name: Build release ZIP
+        run: python scripts/release_artifacts.py
+      - name: Install Blender 4.3.2
+        run: |
+          wget -q https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf blender-4.3.2-linux-x64.tar.xz
+          sudo mv blender-4.3.2-linux-x64 /opt/blender
+          sudo ln -sf /opt/blender/blender /usr/local/bin/blender
+          blender --version
+      - name: Run regression suite
+        run: |
+          BLENDER_USER_RESOURCES="$RUNNER_TEMP/blender-user" blender --background --factory-startup \
+            --python scripts/blender_regression.py -- \
+            --zip dist/blender_mobile_3d-1.0.0.zip \
+            --output "$RUNNER_TEMP/bm3d-regression" | tee regression.log
+          grep -q "REGRESSION_RESULT: PASS" regression.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: blender-regression-log
+          path: regression.log
 
   release-manifest:
     name: release manifest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -q jsonschema
       - run: python scripts/release_artifacts.py
       - run: test -f dist/blender_mobile_3d-1.0.0.zip
-      - run: sha256sum dist/blender_mobile_3d-1.0.0.zip > dist/sha256.txt && cat dist/sha256.txt
+      - run: test -f dist/blender_mobile_3d-1.0.0.zip.sha256
+      - run: test -f dist/release-manifest.json
+      - run: |
+          cd dist && sha256sum -c blender_mobile_3d-1.0.0.zip.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
           path: |
             dist/blender_mobile_3d-1.0.0.zip
-            dist/sha256.txt
+            dist/blender_mobile_3d-1.0.0.zip.sha256
+            dist/release-manifest.json

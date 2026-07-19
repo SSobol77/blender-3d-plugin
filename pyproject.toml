@@ -3,19 +3,17 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "blender-mobile-3d"
+name = "blender-mobile-3d-plugin"
 version = "1.0.0"
-description = "Secure installer and command-line manager for Blender Mobile 3D"
+description = "Production Blender mobile 3D asset pipeline (core package and add-on)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-2.0-only"
 authors = [{name = "SSobol77"}]
-
-[project.scripts]
-blender-mobile-3d = "blender_mobile_3d_installer.cli:main"
+dependencies = ["jsonschema>=4.17"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "pip-audit"]
 
 [tool.ruff]
 line-length = 100
@@ -24,13 +22,30 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+"installers/python/tests/**/*.py" = ["S101"]
+
 [tool.mypy]
-python_version = "311"
-strict = true
+python_version = "3.11"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_configs = true
 
 [tool.pytest.ini_options]
 addopts = "-q"
-testpaths = ["tests"]
+testpaths = ["tests", "installers/python/tests"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "if __name__ == .__main__.:",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/blender_mobile_3d_installer"]
+packages = ["blender_mobile_3d"]

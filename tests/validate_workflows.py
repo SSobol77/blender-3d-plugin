@@ -11,7 +11,7 @@ def validate_manifest(manifest_path, limits):
     if not os.path.exists(manifest_path):
         return [f"manifest missing: {manifest_path}"]
 
-    with open(manifest_path, "r", encoding="utf-8") as f:
+    with open(manifest_path, encoding="utf-8") as f:
         data = json.load(f)
 
     issues = []
@@ -43,7 +43,9 @@ def find_workflow_files(root="workflows"):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default="/home/astra/blender-3d-plugin")
+    parser.add_argument(
+        "--root", default=str(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 

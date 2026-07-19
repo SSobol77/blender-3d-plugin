@@ -1,18 +1,20 @@
-"""Auto-rig operator with explicit meshes binding and mobile-safe hierarchy."""
+"""Auto-rig operator with explicit mesh binding and mobile-safe hierarchy."""
 
 from __future__ import annotations
 
 from typing import Any
 
 import blender_mobile_3d.operators.register as _reg
+from blender_mobile_3d.core.blender import require_bpy
 
 
 def auto_rig_character(obj_name: str, mesh_object: str | None = None) -> dict[str, Any]:
+    bpy = require_bpy()
     context = _reg.get_context()
     scene = context.scene
 
-    arm_data = bpy.data.armatures.new("MobileRig")
-    rig = bpy.data.objects.new("MobileRig", arm_data)
+    arm_data = bpy.data.armatures.new(obj_name or "MobileRig")
+    rig = bpy.data.objects.new(arm_data.name, arm_data)
     scene.collection.objects.link(rig)
     context.view_layer.objects.active = rig
 
@@ -44,7 +46,3 @@ def auto_rig_character(obj_name: str, mesh_object: str | None = None) -> dict[st
         mesh.parent = rig
 
     return {"armature": rig.name, "bind_mesh": getattr(mesh, "name", None)}
-
-
-if __name__ == "__main__":
-    print(auto_rig_character("Character", mesh_object="Body"))

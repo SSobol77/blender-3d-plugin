@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from blender_mobile_3d.config.models import Preset
-from blender_mobile_3d.core.errors import ConfigurationError, ExportError, PathSafetyError
-from blender_mobile_3d.core.logging import Report
-from blender_mobile_3d.core.manifests import build_zip, sha256_file
-from blender_mobile_3d.core.metrics import SceneMetrics
+from blender_mobile_3d.core.errors import ExportError
+from blender_mobile_3d.core.logging import Diagnostic, Report
+from blender_mobile_3d.core.manifests import build_zip
 from blender_mobile_3d.core.scene import measure_scene
 from blender_mobile_3d.core.validation import ValidationEngine
+from blender_mobile_3d.exporters.base import get_exporter
 
 
 class PipelineResult:
@@ -25,7 +25,7 @@ class PipelineResult:
 class Pipeline:
     def __init__(self, preset: Preset, output_dir: Path | None = None) -> None:
         self.preset = preset
-        self.output_dir = output_dir or preset.paths.output_relative
+        self.output_dir = Path(output_dir or preset.paths.output_relative)
 
     def run(self, context: Any, dry_run: bool = True) -> PipelineResult:
         self.report = Report()
@@ -41,7 +41,7 @@ class Pipeline:
         artifacts: list[str] = []
         if not dry_run and scene is not None:
             try:
-                artifacts = self._export(context, scene)
+                artifacts = self._export(context)
             except Exception as exc:
                 raise ExportError(str(exc)) from exc
 
@@ -50,7 +50,7 @@ class Pipeline:
         artifacts.append(str(manifest_path))
 
         if not dry_run and artifacts:
-            zip_manifest = build_zip(
+            build_zip(
                 self.output_dir,
                 [Path(a) for a in artifacts],
                 self.output_dir / f"{self.preset.target}_mobile.zip",
@@ -67,14 +67,14 @@ class Pipeline:
 
     def _validate(self, metrics: dict[str, Any]) -> None:
         engine = ValidationEngine(limits=self.preset.limits.__dict__)
-        issues = engine.validate_metrics(metrics)
-        for issue in issues:
-            from blender_mobile_3d.core.logging import Diagnostic
-
+        for issue in engine.validate_metrics(metrics):
             self.report.add(Diagnostic(**issue))
 
-    def _export(self, context: Any, scene: Any) -> list[str]:  # pragma: no cover - adapter boundary
-        raise NotImplementedError("Export adapters implement actual export operations.")
+    def _export(self, context: Any) -> list[str]:
+        exporter = get_exporter(self.preset.target)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        result = exporter.export(context, self.output_dir)
+        return [str(result["path"])]
 
     def _build_manifest(
         self, metrics: dict[str, Any], report: dict[str, Any], artifacts: list[str]

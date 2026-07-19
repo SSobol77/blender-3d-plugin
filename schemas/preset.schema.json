@@ -1,1 +1,104 @@
-{"$schema": "http://json-schema.org/draft/2020-12/schema", "title": "Mobile preset", "type": "object", "required": ["schema_version", "plugin_version", "preset", "target", "limits", "paths", "export"], "properties": {"schema_version": {"type": "string"}, "plugin_version": {"type": "string"}, "preset": {"type": "string", "enum": ["low_poly", "environment", "character", "ui_3d", "fx"]}, "target": {"type": "string", "enum": ["godot", "unity", "unreal", "flutter", "kotlin"]}, "limits": {"type": "object", "properties": {"tri_limit": {"type": "integer", "minimum": 1}, "tex_max": {"type": "integer", "minimum": 1}, "material_limit": {"type": "integer", "minum": 1}, "bone_limit": {"type": "integer", "minimum": 0}}, "required": ["tri_limit", "tex_max", "material_limit", "bone_limit"]}, "paths": {"type": "object", "properties": {"use_project_output": {"type": "boolean"}, "output_relative": {"type": "string"}}, "required": ["use_project_output", "output_relative"]}, "export": {"type": "object", "properties": {"apply_scale": {"type": "boolean"}, "triangulate": {"type": "boolean"}, "bake_animation": {"type": "boolean"}, "uv_requirements": {"type": "string"}, "alpha_support": {"type": "boolean"}}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mobile preset",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "plugin_version",
+    "preset",
+    "target",
+    "limits",
+    "paths",
+    "export"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "plugin_version": {
+      "type": "string"
+    },
+    "preset": {
+      "type": "string",
+      "enum": [
+        "low_poly",
+        "environment",
+        "character",
+        "ui_3d",
+        "fx"
+      ]
+    },
+    "target": {
+      "type": "string",
+      "enum": [
+        "godot",
+        "unity",
+        "unreal",
+        "flutter",
+        "kotlin"
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "tri_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tex_max": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "material_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bone_limit": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "tri_limit",
+        "tex_max",
+        "material_limit",
+        "bone_limit"
+      ]
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "use_project_output": {
+          "type": "boolean"
+        },
+        "output_relative": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "use_project_output",
+        "output_relative"
+      ]
+    },
+    "export": {
+      "type": "object",
+      "properties": {
+        "apply_scale": {
+          "type": "boolean"
+        },
+        "triangulate": {
+          "type": "boolean"
+        },
+        "bake_animation": {
+          "type": "boolean"
+        },
+        "uv_requirements": {
+          "type": "string"
+        },
+        "alpha_support": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

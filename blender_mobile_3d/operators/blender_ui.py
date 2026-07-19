@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any
+import json
+from dataclasses import asdict
+from pathlib import Path
 
 import bpy
-from blender_mobile_3d import __version__
+
 from blender_mobile_3d.config.loader import load_preset
-from blender_mobile_3d.core.logging import Report
-from blender_mobile_3d.operators.auto_rig import auto_rig_character
+from blender_mobile_3d.config.models import Preset
+from blender_mobile_3d.core.scene import measure_scene
+from blender_mobile_3d.core.validation import ValidationEngine
 from blender_mobile_3d.operators.export import export_for_target
 from blender_mobile_3d.operators.generate_lod import generate_lod
-from blender_mobile_3d.operators.prepare_scene import prepare_scene
 
 
 class MOBILE_3D_OT_analyze(bpy.types.Operator):
@@ -22,13 +24,19 @@ class MOBILE_3D_OT_analyze(bpy.types.Operator):
     def execute(self, context: bpy.types.Context) -> set[str]:
         preset_path = context.scene.mobile_3d_preset_path
         try:
-            preset = load_preset(preset_path)
+            if preset_path:
+                preset = Preset.from_dict(load_preset(preset_path))
+            else:
+                preset = Preset()
+            metrics = measure_scene(context.scene)
+            engine = ValidationEngine(limits=asdict(preset.limits))
+            issues = engine.validate_metrics(metrics)
         except Exception as exc:
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
 
-        report = Report()
-        context.scene.mobile_3d_report = str(report.to_dict())
+        payload = {"metrics": metrics, "issues": issues, "passed": not issues}
+        context.scene.mobile_3d_report = json.dumps(payload)
         self.report({"INFO"}, f"Analysis complete: {context.scene.mobile_3d_report[:120]}")
         return {"FINISHED"}
 
@@ -56,7 +64,7 @@ class MOBILE_3D_OT_export(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         target = context.scene.mobile_3d_target
-        export_dir = context.scene.mobile_3d_output_dir
+        export_dir = Path(bpy.path.abspath(context.scene.mobile_3d_output_dir))
         try:
             result = export_for_target(target, export_dir)
         except Exception as exc:
@@ -95,8 +103,23 @@ classes = [
     MOBILE_3D_PT_panel,
 ]
 
+_SCENE_PROPERTIES = (
+    "mobile_3d_target",
+    "mobile_3d_preset_path",
+    "mobile_3d_output_dir",
+    "mobile_3d_active_object",
+    "mobile_3d_report",
+)
+
+_registered = False
+
 
 def register_addon() -> None:
+    """Register classes and scene properties; safe to call repeatedly."""
+    global _registered
+    if _registered:
+        return
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -129,13 +152,18 @@ def register_addon() -> None:
         name="Report",
         default="",
     )
+    _registered = True
 
 
 def unregister_addon() -> None:
-    del bpy.types.Scene.mobile_3d_target  # type: ignore[attr-defined]
-    del bpy.types.Scene.mobile_3d_preset_path  # type: ignore[attr-defined]
-    del bpy.types.Scene.mobile_3d_output_dir  # type: ignore[attr-defined]
-    del bpy.types.Scene.mobile_3d_active_object  # type: ignore[attr-defined]
-    del bpy.types.Scene.mobile_3d_report  # type: ignore[attr-defined]
+    """Remove classes and scene properties; safe to call repeatedly."""
+    global _registered
+    if not _registered:
+        return
+
+    for prop in _SCENE_PROPERTIES:
+        if hasattr(bpy.types.Scene, prop):
+            delattr(bpy.types.Scene, prop)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    _registered = False

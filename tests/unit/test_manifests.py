@@ -28,7 +28,10 @@ def test_build_zip_creates_archive(tmp_path: Path) -> None:
 
 
 def test_build_zip_rejects_outside_member(tmp_path: Path):
-    outside = Path("/tmp/fake_does_not_matter_12345.txt")
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("secret", encoding="utf-8")
     zpath = tmp_path / "out.zip"
-    with pytest.raises(ValueError):
-        build_zip(tmp_path, [outside], zpath)
+    with pytest.raises(ValueError, match="outside export dir"):
+        build_zip(export_dir, [outside], zpath)

@@ -1,76 +1,101 @@
-"""End-to-end release verification in a clean Blender config."""
+#!/usr/bin/env python3
+"""End-to-end release verification: build artifacts, then run the Blender
+regression suite against the built ZIP in an isolated Blender user profile.
+
+Usage:
+    python scripts/release_e2e.py [--blender /path/to/blender] [--workdir DIR]
+"""
 
 from __future__ import annotations
 
-import hashlib
+import argparse
 import json
 import os
+import shutil
+import subprocess
 import sys
-import zipfile
+import tempfile
 from pathlib import Path
 
-ZIP_PATH = Path("/tmp/blender-ci") / "blender_mobile_3d-1.0.0.zip"
-ADDONS_DIR = Path.home() / ".config" / "blender" / "4.3" / "scripts" / "addons"
-PACKAGE_DIR = ADDONS_DIR / "blender_mobile_3d"
-REPORT_PATH = ZIP_PATH.parent / "e2e-report.json"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REGRESSION_SCRIPT = REPO_ROOT / "scripts" / "blender_regression.py"
+BLENDER_TIMEOUT_SECONDS = 600
 
 
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return f"sha256:{h.hexdigest()}"
+def build_artifacts() -> Path:
+    from release_artifacts import build_release
+
+    artifacts = build_release(REPO_ROOT)
+    return artifacts["zip"]
 
 
-def run_blender_script(script: str) -> int:
-    blender = "/usr/local/bin/blender"
-    cmd = f"BLENDER_USER_CONFIG=/tmp/blender-ci {blender} --background --factory-startup --python-expr '{script}'"
-    return os.system(cmd)
+def run_blender_regression(blender: str, zip_path: Path, workdir: Path) -> int:
+    blender_path = shutil.which(blender) or blender
+    if not Path(blender_path).is_file():
+        print(f"release_e2e: blender executable not found: {blender}", file=sys.stderr)
+        return 1
+
+    user_dir = workdir / "blender-user"
+    output_dir = workdir / "regression-output"
+    user_dir.mkdir(parents=True, exist_ok=True)
+
+    env = dict(os.environ)
+    env["BLENDER_USER_RESOURCES"] = str(user_dir)
+
+    cmd = [
+        blender_path,
+        "--background",
+        "--factory-startup",
+        "--python",
+        str(REGRESSION_SCRIPT),
+        "--",
+        "--zip",
+        str(zip_path),
+        "--output",
+        str(output_dir),
+    ]
+    # The command is a fixed argument array (no shell); the only variable
+    # element is the operator-chosen Blender executable path.
+    completed = subprocess.run(  # noqa: S603
+        cmd,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=BLENDER_TIMEOUT_SECONDS,
+        check=False,
+    )
+    sys.stdout.write(completed.stdout)
+    sys.stderr.write(completed.stderr)
+
+    passed = completed.returncode == 0 and "REGRESSION_RESULT: PASS" in completed.stdout
+    report = {
+        "zip": str(zip_path),
+        "returncode": completed.returncode,
+        "passed": passed,
+    }
+    (workdir / "e2e-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return 0 if passed else 1
 
 
 def main() -> int:
-    ZIP_PATH.parent.mkdir(parents=True, exist_ok=True)
-    report = {
-        "zip_path": str(ZIP_PATH),
-        "sha256": sha256_file(ZIP_PATH),
-        "artifacts": [],
-        "checks": {},
-    }
+    parser = argparse.ArgumentParser(prog="release_e2e")
+    parser.add_argument("--blender", default="blender", help="Blender executable")
+    parser.add_argument("--workdir", default=None, help="Working directory (default: temp)")
+    args = parser.parse_args()
 
-    if not ZIP_PATH.exists():
-        report["checks"]["zip_exists"] = False
-        REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        zip_path = build_artifacts()
+    except Exception as exc:
+        print(f"release_e2e: artifact build failed: {exc}", file=sys.stderr)
         return 1
 
-    report["checks"]["zip_exists"] = True
-    report["checks"]["zip_valid_zip"] = zipfile.is_zipfile(ZIP_PATH)
-
-    install_script = f"""
-import bpy, sys, os
-zip_path = r'{ZIP_PATH}'
-addons_dir = r'{ADDONS_DIR}'
-addons_dir.mkdir(parents=True, exist_ok=True)
-bpy.ops.preferences.addon_install(filepath=zip_path)
-bpy.ops.preferences.addon_enable(module='blender_mobile_3d')
-"""
-    os.system(
-        f"BLENDER_USER_CONFIG=/tmp/blender-ci /usr/local/bin/blender --background --factory-startup --python-expr '{install_script}'"
-    )
-
-    scene_script = """
-import bpy, sys
-result = {
-    "addons": sorted(bpy.context.preferences.addons.keys()),
-    "use_restrict": getattr(bpy.context.preferences, "use_restrict", False),
-}
-print(json.dumps(result))
-"""
-    ret = run_blender_script(scene_script)
-    report["checks"]["addon_enabled"] = ret == 0
-
-    REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    return 0 if all(v is True for v in report["checks"].values()) else 2
+    if args.workdir:
+        workdir = Path(args.workdir)
+        workdir.mkdir(parents=True, exist_ok=True)
+        return run_blender_regression(args.blender, zip_path, workdir)
+    with tempfile.TemporaryDirectory(prefix="bm3d-e2e-") as tmp:
+        return run_blender_regression(args.blender, zip_path, Path(tmp))
 
 
 if __name__ == "__main__":

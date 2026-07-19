@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import blender_mobile_3d.operators.register as _reg
 
 
@@ -30,8 +28,5 @@ def generate_lod(obj_name: str, lod_ratios: tuple[float, ...] = (0.6, 0.3, 0.15)
         chain.append(lod.name)
 
     obj.name = f"{base_name}_LOD0"
+    chain[0] = obj.name
     return chain
-
-
-if __name__ == "__main__":
-    print(generate_lod("Cube"))

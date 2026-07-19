@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from blender_mobile_3d_installer.commands import main
 
 

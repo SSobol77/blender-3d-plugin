@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import dataclasses
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+from blender_mobile_3d.core.geometry import count_triangles
 
 
 def texture_dimensions(image: Any) -> tuple[int, int]:
@@ -15,8 +16,8 @@ def texture_dimensions(image: Any) -> tuple[int, int]:
         return (0, 0)
 
 
-def texture_dimensions_from_material(material: Any) -> List[tuple[int, int]]:
-    dims: List[tuple[int, int]] = []
+def texture_dimensions_from_material(material: Any) -> list[tuple[int, int]]:
+    dims: list[tuple[int, int]] = []
     if material is None:
         return dims
     node_tree = getattr(material, "node_tree", None)
@@ -29,21 +30,20 @@ def texture_dimensions_from_material(material: Any) -> List[tuple[int, int]]:
     return dims
 
 
-def measure_mesh(mesh: Any) -> Dict[str, int]:
+def measure_mesh(mesh: Any) -> dict[str, int]:
     if mesh is None:
         return {}
     poly_data = getattr(mesh, "polygons", []) or []
-    triangles = sum(len(p.vertices) for p in poly_data)
     return {
         "vertices": len(getattr(mesh, "vertices", [])),
         "edges": len(getattr(mesh, "edges", [])),
         "polygons": len(poly_data),
-        "triangles": triangles,
+        "triangles": count_triangles(mesh),
     }
 
 
-def measure_scene(scene: Any) -> Dict[str, Any]:
-    summary: Dict[str, Any] = {
+def measure_scene(scene: Any) -> dict[str, Any]:
+    summary: dict[str, Any] = {
         "object_count": 0,
         "mesh_count": 0,
         "triangle_count": 0,
@@ -63,9 +63,9 @@ def measure_scene(scene: Any) -> Dict[str, Any]:
         "bounding_box": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     }
 
-    material_usage: Dict[str, int] = {}
-    texture_dims: List[tuple[int, int]] = []
-    modifiers: List[str] = []
+    material_usage: dict[str, int] = {}
+    texture_dims: list[tuple[int, int]] = []
+    modifiers: list[str] = []
     unapplied_transforms = 0
 
     if scene is None:
@@ -75,14 +75,23 @@ def measure_scene(scene: Any) -> Dict[str, Any]:
     summary["object_count"] = len(objects)
 
     for obj in objects:
-        if getattr(obj, "type", None) == "MESH":
+        obj_type = getattr(obj, "type", None)
+        if obj_type == "ARMATURE":
+            summary["armature_count"] += 1
+            armature = getattr(obj, "data", None)
+            bones = list(getattr(armature, "bones", []) or [])
+            summary["bone_count"] += len(bones)
+            summary["deform_bone_count"] += sum(
+                1 for bone in bones if getattr(bone, "use_deform", True)
+            )
+        if obj_type == "MESH":
             mesh = getattr(obj, "data", None)
             summary["mesh_count"] += 1
             if mesh is not None:
                 mesh_summary = measure_mesh(mesh)
                 summary["triangle_count"] += int(mesh_summary.get("triangles", 0))
 
-                for index, slot in enumerate(getattr(mesh, "materials", []) or []):
+                for slot in getattr(mesh, "materials", []) or []:
                     if slot is not None:
                         summary["material_slots"] += 1
                         material_usage[slot.name] = material_usage.get(slot.name, 0) + 1
@@ -91,17 +100,18 @@ def measure_scene(scene: Any) -> Dict[str, Any]:
                 if getattr(mesh, "uv_layers", None):
                     summary["uv_map_count"] += len(getattr(mesh, "uv_layers", []) or [])
 
-                summary["shape_key_count"] += (
-                    len(getattr(mesh, "shape_keys", {}).key_blocks) - 1
-                    if getattr(mesh, "shape_keys", None)
-                    else 0
-                )
+                shape_keys = getattr(mesh, "shape_keys", None)
+                if shape_keys is not None:
+                    summary["shape_key_count"] += max(
+                        0, len(getattr(shape_keys, "key_blocks", [])) - 1
+                    )
 
             for modifier in getattr(obj, "modifiers", []) or []:
                 modifiers.append(modifier.type)
-                matrix = getattr(obj, "matrix_world", None)
-                if matrix is not None and not getattr(obj, "matrix_world", None).is_identity:
-                    unapplied_transforms += 1
+
+            matrix = getattr(obj, "matrix_world", None)
+            if matrix is not None and not getattr(matrix, "is_identity", True):
+                unapplied_transforms += 1
 
     summary["unique_materials"] = len(material_usage)
     summary["texture_count"] = len(texture_dims)
@@ -113,5 +123,5 @@ def measure_scene(scene: Any) -> Dict[str, Any]:
     return summary
 
 
-def scene_metrics(scene: Any) -> Dict[str, Any]:
+def scene_metrics(scene: Any) -> dict[str, Any]:
     return measure_scene(scene)

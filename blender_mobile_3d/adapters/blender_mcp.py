@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 
-
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9876
 

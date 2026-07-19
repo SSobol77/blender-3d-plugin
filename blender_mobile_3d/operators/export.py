@@ -1,16 +1,16 @@
-"""Export operator with target-aware Bluray operations."""
+"""Export operator with target-aware format selection."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-import blender_mobile_3d.operators.register as _reg
+from blender_mobile_3d.core.blender import require_bpy
 
 
 def export_for_target(target: str, output_dir: Path) -> dict[str, Any]:
-    context = _reg.get_context()
-    scene = context.scene
+    bpy = require_bpy()
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     filename = output_dir / f"{target}_asset.glb"
@@ -30,7 +30,3 @@ def export_for_target(target: str, output_dir: Path) -> dict[str, Any]:
         "filename": filename.name,
         "path": str(filename),
     }
-
-
-if __name__ == "__main__":
-    print(export_for_target("godot", Path("/tmp/export_test")))

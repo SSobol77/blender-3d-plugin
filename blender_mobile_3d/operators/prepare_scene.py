@@ -14,7 +14,3 @@ def prepare_scene(unit_scale: float = 0.01, engine: str = "BLENDER_EEVEE_NEXT") 
     scene.unit_settings.scale_length = unit_scale
     scene.render.engine = engine
     return {"unit_scale": unit_scale, "engine": engine}
-
-
-if __name__ == "__main__":
-    print(prepare_scene())

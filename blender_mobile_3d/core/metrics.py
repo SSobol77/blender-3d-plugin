@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -17,7 +16,7 @@ class SceneMetrics:
     material_slots: int = 0
     unique_materials: int = 0
     texture_count: int = 0
-    texture_dimensions: List[tuple[int, int]] = field(default_factory=list)
+    texture_dimensions: list[tuple[int, int]] = field(default_factory=list)
     uv_map_count: int = 0
     armature_count: int = 0
     bone_count: int = 0
@@ -26,6 +25,6 @@ class SceneMetrics:
     keyframe_range: tuple[int, int] = (0, 0)
     shape_key_count: int = 0
     modifier_count: int = 0
-    modifier_types: List[str] = field(default_factory=list)
+    modifier_types: list[str] = field(default_factory=list)
     unapplied_transforms: int = 0
     bounding_box: tuple[float, float, float, float, float, float] = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
