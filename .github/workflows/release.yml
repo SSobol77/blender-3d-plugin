@@ -1,0 +1,325 @@
+name: Release
+
+# workflow_dispatch performs build + verification ONLY; it never creates a
+# release or publishes anything (see the `if:` guards on github-release and
+# publish-pypi below, which require event_name == 'push' on a version tag).
+#
+# GitHub Actions tag filters use a limited glob syntax (no regex quantifiers
+# such as `+`), so `v*.*.*` is a deliberately loose pre-filter. The exact
+# `^v\d+\.\d+\.\d+$` format is enforced at runtime by
+# scripts/verify_release_versions.py, which fails the whole workflow closed
+# on any malformed tag. See docs/RELEASE.md.
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  validate-version:
+    name: Validate version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is_release: ${{ steps.version.outputs.is_release }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Determine expected version
+        id: version
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+            IS_RELEASE=true
+          else
+            TAG=""
+            VERSION="$(python -c 'from blender_mobile_3d.version import VERSION; print(VERSION)')"
+            IS_RELEASE=false
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "is_release=${IS_RELEASE}" >> "$GITHUB_OUTPUT"
+      - name: Fetch main for tag-reachability check
+        if: steps.version.outputs.is_release == 'true'
+        run: git fetch origin main
+      - name: Verify cross-file version agreement (fail closed)
+        run: |
+          set -euo pipefail
+          ARGS=(--expected-version "${{ steps.version.outputs.version }}")
+          if [[ "${{ steps.version.outputs.is_release }}" == "true" ]]; then
+            ARGS+=(--git-tag "${{ steps.version.outputs.tag }}")
+            ARGS+=(--require-main-ancestor origin/main --commit "${{ github.sha }}")
+          fi
+          python scripts/verify_release_versions.py "${ARGS[@]}"
+
+  test-python:
+    name: Python test suite
+    needs: validate-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python -m pip install -q -e '.[dev]' -e installers/python
+      - name: Ruff format
+        run: ruff format --check blender_mobile_3d installers/python tests scripts
+      - name: Ruff lint
+        run: ruff check blender_mobile_3d installers/python tests scripts
+      - name: Ruff security rules
+        run: ruff check blender_mobile_3d installers/python/src scripts --select S
+      - name: mypy
+        run: mypy blender_mobile_3d
+      - name: pytest (branch coverage >= 90%)
+        run: >
+          pytest
+          --cov=blender_mobile_3d
+          --cov=blender_mobile_3d_installer
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=90
+
+  test-node:
+    name: Node.js test suite
+    needs: validate-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: installers/npm/package-lock.json
+      - working-directory: installers/npm
+        run: npm ci
+      - name: ESLint
+        working-directory: installers/npm
+        run: npm run lint
+      - name: node --test
+        working-directory: installers/npm
+        run: npm test
+
+  build:
+    name: Build release artifacts
+    needs: [validate-version, test-python, test-node]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+      - run: python -m pip install -q -e '.[dev]' -e installers/python
+      - run: python -m pip install -q build twine
+      - name: Build canonical Blender add-on ZIP + checksum + release manifest
+        run: python scripts/release_artifacts.py
+      - name: Verify release-manifest agrees with the validated version
+        run: >
+          python scripts/verify_release_versions.py
+          --expected-version "${{ needs.validate-version.outputs.version }}"
+          --release-manifest dist/release-manifest.json
+      - name: Verify ZIP SHA-256 checksum
+        working-directory: dist
+        run: sha256sum -c "blender_mobile_3d-${{ needs.validate-version.outputs.version }}.zip.sha256"
+      - name: Build Python wheel and sdist (installer package)
+        run: python -m build installers/python
+      - name: twine check
+        run: python -m twine check installers/python/dist/*
+      - name: Build npm tarball
+        working-directory: installers/npm
+        run: |
+          npm ci
+          npm pack
+      - name: Inspect npm package contents (fail closed)
+        working-directory: installers/npm
+        run: |
+          set -euo pipefail
+          TARBALL=$(ls ./*.tgz)
+          echo "Inspecting ${TARBALL}"
+          CONTENTS=$(tar tzf "${TARBALL}")
+          echo "${CONTENTS}"
+          if echo "${CONTENTS}" | grep -qE '^package/test/'; then
+            echo "::error::npm tarball must not include test/ (files allowlist regression)"
+            exit 1
+          fi
+          for required in package/bin/ package/src/ package/README.md package/LICENSE package/package.json; do
+            if ! echo "${CONTENTS}" | grep -qF "${required}"; then
+              echo "::error::npm tarball missing required entry: ${required}"
+              exit 1
+            fi
+          done
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-artifacts
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            dist/blender_mobile_3d-*.zip
+            dist/blender_mobile_3d-*.zip.sha256
+            dist/release-manifest.json
+            installers/python/dist/*.whl
+            installers/python/dist/*.tar.gz
+            installers/npm/*.tgz
+
+  blender-regression:
+    name: Blender headless regression
+    needs: [validate-version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+      - run: python -m pip install -q -e '.[dev]'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: dist-download
+      - name: Stage downloaded artifacts for regression + E2E
+        run: |
+          set -euo pipefail
+          mkdir -p dist installers/python/dist
+          cp dist-download/blender_mobile_3d-*.zip dist/
+          cp dist-download/blender_mobile_3d-*.zip.sha256 dist/
+          cp dist-download/release-manifest.json dist/
+          cp dist-download/*.whl dist-download/*.tar.gz installers/python/dist/
+          cp dist-download/*.tgz installers/npm/
+      - name: Install Blender 4.3.2
+        run: |
+          wget -q https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf blender-4.3.2-linux-x64.tar.xz
+          sudo mv blender-4.3.2-linux-x64 /opt/blender
+          sudo ln -sf /opt/blender/blender /usr/local/bin/blender
+          blender --version
+      - name: Run core add-on regression suite
+        run: |
+          set -euo pipefail
+          BLENDER_USER_RESOURCES="$RUNNER_TEMP/blender-user" blender --background --factory-startup \
+            --python scripts/blender_regression.py -- \
+            --zip "dist/blender_mobile_3d-${{ needs.validate-version.outputs.version }}.zip" \
+            --output "$RUNNER_TEMP/bm3d-regression" | tee regression.log
+          grep -q "REGRESSION_RESULT: PASS" regression.log
+      - name: E2E - Python wheel installer against real Blender (isolated profile)
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/pip" install -q installers/python/dist/*.whl
+          python scripts/installer_e2e.py \
+            --bin "$RUNNER_TEMP/wheel-venv/bin/blender-mobile-3d" \
+            --blender /usr/local/bin/blender \
+            --zip "$GITHUB_WORKSPACE/dist/blender_mobile_3d-${{ needs.validate-version.outputs.version }}.zip" \
+            --home "$RUNNER_TEMP/e2e-home-python" \
+            --label python-wheel
+      - name: E2E - npm tarball installer against real Blender (isolated profile)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/npm-e2e-install"
+          cd "$RUNNER_TEMP/npm-e2e-install"
+          npm init -y >/dev/null
+          npm install "$GITHUB_WORKSPACE"/installers/npm/*.tgz
+          cd "$GITHUB_WORKSPACE"
+          python scripts/installer_e2e.py \
+            --bin "$RUNNER_TEMP/npm-e2e-install/node_modules/.bin/blender-mobile-3d" \
+            --blender /usr/local/bin/blender \
+            --zip "$GITHUB_WORKSPACE/dist/blender_mobile_3d-${{ needs.validate-version.outputs.version }}.zip" \
+            --home "$RUNNER_TEMP/e2e-home-npm" \
+            --label npm-tgz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: blender-regression-log
+          retention-days: 14
+          path: regression.log
+
+  github-release:
+    name: Create GitHub Release
+    needs: [validate-version, build, blender-regression]
+    # Real release only: never runs for workflow_dispatch.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: release-assets
+      - name: Create GitHub Release (gh CLI, GITHUB_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ needs.validate-version.outputs.tag }}" \
+            --title "${{ needs.validate-version.outputs.tag }}" \
+            --generate-notes \
+            release-assets/*
+
+  publish-pypi:
+    name: Publish to PyPI (Trusted Publishing)
+    needs: [validate-version, github-release]
+    # Real release only: never runs for workflow_dispatch.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/project/blender-mobile-3d/${{ needs.validate-version.outputs.version }}/
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: pypi-dist-raw
+      - name: Stage only the Python wheel/sdist for publishing
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp pypi-dist-raw/*.whl pypi-dist-raw/*.tar.gz dist/
+          ls -la dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
+        with:
+          packages-dir: dist/

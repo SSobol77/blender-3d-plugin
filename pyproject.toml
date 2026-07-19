@@ -13,7 +13,7 @@ authors = [{name = "SSobol77"}]
 dependencies = ["jsonschema>=4.17"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "pip-audit"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "pip-audit", "pyyaml"]
 
 [tool.ruff]
 line-length = 100
