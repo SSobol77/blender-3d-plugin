@@ -199,19 +199,27 @@ jobs:
               exit 1
             fi
           done
+      - name: Stage flat release bundle
+        run: |
+          set -euo pipefail
+          rm -rf release-bundle
+          mkdir -p release-bundle
+          cp dist/blender_mobile_3d-*.zip release-bundle/
+          cp dist/blender_mobile_3d-*.zip.sha256 release-bundle/
+          cp dist/release-manifest.json release-bundle/
+          cp installers/python/dist/*.whl release-bundle/
+          cp installers/python/dist/*.tar.gz release-bundle/
+          cp installers/npm/*.tgz release-bundle/
+          find release-bundle -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | sort
+          FILE_COUNT=$(find release-bundle -mindepth 1 -maxdepth 1 -type f | wc -l)
+          test "${FILE_COUNT}" -eq 6
       - name: Upload release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-artifacts
           retention-days: 14
           if-no-files-found: error
-          path: |
-            dist/blender_mobile_3d-*.zip
-            dist/blender_mobile_3d-*.zip.sha256
-            dist/release-manifest.json
-            installers/python/dist/*.whl
-            installers/python/dist/*.tar.gz
-            installers/npm/*.tgz
+          path: release-bundle/*
 
   blender-regression:
     name: Blender headless regression
