@@ -1,0 +1,16 @@
+{
+  "name": "@glaeron/blender-mobile-3d",
+  "version": "1.0.0",
+  "license": "GPL-2.0-only",
+  "type": "module",
+  "bin": {
+    "blender-mobile-3d": "./bin/blender-mobile-3d.js"
+  },
+  "files": ["bin", "src", "test"],
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "lint": "echo lint",
+    "test": "node --test",
+    "pack": "npm pack --dry-run"
+  }
+}

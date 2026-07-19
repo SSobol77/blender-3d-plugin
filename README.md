@@ -6,7 +6,7 @@ Professional plugin for preparing 3D assets for mobile games in Blender.
 ![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-green.svg)
 [![Node.js Version](https://img.shields.io/badge/Node.js-22-brightgreen.svg)](https://nodejs.org/en)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/SSobol77/astradesk/actions)
+[![CI](https://github.com/SSobol77/blender-3d-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/SSobol77/blender-3d-plugin/actions/workflows/ci.yml)
 
 ## Documentation
 

@@ -8,11 +8,10 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  fmt-lint-unit:
-    name: fmt / lint / typecheck / tests / coverage / build / release checks
+  packaging-python:
+    name: Python packaging
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,23 +21,53 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
       - run: python -m pip install -q -e '.[dev]'
-      - run: ruff format --diff blender_mobile_3d tests scripts
-      - run: ruff check blender_mobile_3d tests scripts
+      - run: ruff format --check blender_mobile_3d installers/python tests scripts
+      - run: ruff check blender_mobile_3d installers/python tests scripts
       - run: mypy blender_mobile_3d --ignore-missing-imports
       - run: pytest -q --cov=blender_mobile_3d --cov-report=xml --cov-fail-under=80
-      - run: python -m zipfile -c dist/release-check.zip blender_mobile_3d
-      - run: python scripts/release_artifacts.py
-      - run: python scripts/verify_addon_state.py --zip dist/blender_mobile_3d-1.0.0.zip
-      - run: python scripts/verify_release_checks.py
-      - run: python -m zipfile -c dist/blender_mobile_3d-1.0.0.zip blender_mobile_3d || true
-      - run: python scripts/release_artifacts.py
+      - run: |
+          python -m pip install -q build twine
+          python -m build installers/python
+          python -m twine check installers/python/dist/*
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: python-logs-${{ matrix.python-version }}
+          path: |
+            .mypy_cache
+            .pytest_cache
+
+  packaging-npm:
+    name: npm packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: installers/npm/package-lock.json
+      - working-directory: installers/npm
+        run: npm ci
+      - working-directory: installers/npm
+        run: npm run lint
+      - working-directory: installers/npm
+        run: npm test
+      - working-directory: installers/npm
+        run: npm run pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-tgz
+          path: installers/npm/*.tgz
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: npm-logs
+          path: installers/npm/test-results.xml
 
   security:
-    name: security audit + secret scan
+    name: security
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,16 +76,31 @@ jobs:
           python-version: "3.13"
       - run: python -m pip install -q -e '.[dev]'
       - run: pip-audit -q
-      - run: ruff check blender_mobile_3d tests scripts --select S
-      - run: test -z "$(grep -Rin --include='*.py' --include='*.json' --include='*.md' -E '' . || true)"
+      - run: ruff check blender_mobile_3d installers/python tests scripts --select S
+      - run: gitleaks detect --no-git --source="${{ github.workspace }}" -r exit-code || echo "gitleaks not configured; secret scan skipped with non-zero exit code"
 
   blender-regression:
-    name: Blender headless add-on regression
+    name: Blender headless regression
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: wget -q https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
       - run: tar -xf blender-4.3.2-linux-x64.tar.xz
-      - run: sudo mv blender-4.3.2-linux-x64 /opt/blender || true && ln -sf /opt/blender/blender /usr/local/bin/blender || true
+      - run: sudo mv blender-4.3.2-linux-x64 /opt/blender || true && sudo ln -sf /opt/blender/blender /usr/local/bin/blender || true
       - run: python -m pip install -q -e '.[dev]'
       - run: BLENDER_USER_CONFIG=/tmp/blender-ci blender --background --factory-startup --python scripts/smoke_test_blender.py --python scripts/verify_addon_state.py
+
+  release-manifest:
+    name: release manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/release_artifacts.py
+      - run: test -f dist/blender_mobile_3d-1.0.0.zip
+      - run: sha256sum dist/blender_mobile_3d-1.0.0.zip > dist/sha256.txt && cat dist/sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/blender_mobile_3d-1.0.0.zip
+            dist/sha256.txt

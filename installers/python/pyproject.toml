@@ -1,7 +1,3 @@
-[build-system]
-requires = ["hatchling>=1.27,<2"]
-build-backend = "hatchling.build"
-
 [project]
 name = "blender-mobile-3d"
 version = "1.0.0"
@@ -10,9 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-2.0-only"
 authors = [{name = "SSobol77"}]
-
-[project.scripts]
-blender-mobile-3d = "blender_mobile_3d_installer.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
@@ -31,6 +24,3 @@ strict = true
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/blender_mobile_3d_installer"]
