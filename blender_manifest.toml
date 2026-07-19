@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+name = "blender-mobile-3d"
+version = "1.0.0"
+description = "Production-grade Blender mobile 3D asset pipeline"
+license = "GPL-2.0-only"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[options]
+packages = ["blender_mobile_3d"]
+
+[options.entry-points.console_scripts]
+blender_mobile_3d_cli = "scripts.blender_mobile_3d_cli:main"

@@ -2,6 +2,7 @@
 
 Professional plugin for preparing 3D assets for mobile games in Blender.
 
+![Blender Mobile 3D](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-green.svg)
 ![Hermes](https://img.shields.io/badge/Hermes-compatible-lightgrey.svg)
@@ -15,20 +16,41 @@ Professional plugin for preparing 3D assets for mobile games in Blender.
 
 ## Requirements
 
-- Blender 5.2.0 LTS or 4.3+
+- Blender 4.3+
 - Python 3.11+
-- `blender-mcp` addon with TCP server on port 9876
-- Agent: Hermes, Claude Code, Codex CLI, or Kimi/Kimi K2
+- Blender UI usage does not require an AI agent
+- Optional agent adapter support: Hermes, Claude Code, Codex CLI, Kimi/Kimi K2
+- Optional `blender-mcp` adapter for agent-based workflows
+
+## Quick Install
+
+### Blender add-on
+
+1. Download the release ZIP from `https://github.com/SSobol77/blender-3d-plugin/releases`
+2. In Blender: `Edit > Preferences > Add-ons > Install...` and select the ZIP
+3. Enable `Blender Mobile 3D`
+
+### Agent compatibility package
+
+```bash
+cp -r blender-3d-plugin/plugin-core ~/.hermes/skills/creative/blender-mobile-3d-plugin
+```
 
 ## License
 
 GPL-2.0-only. See `LICENSE` in the repository root.
 
-## Quick Install
+## Project layout
 
-```bash
-git clone https://github.com/SSobol77/blender-3d-plugin.git
-cp -r blender-3d-plugin/hermes-skill ~/.hermes/skills/creative/blender-mobile-3d-plugin
+```text
+blender-3d-plugin/
+  blender_mobile_3d/    production package/core
+  presets/              target/asset presets
+  schemas/              manifest and preset schemas
+  scripts/              CLI wrapper
+  tests/                unit and integration tests
+  docs/                 multilingual documentation
+  plugin-core/          agent-compatible compatibility package
 ```
 
 Full documentation:
