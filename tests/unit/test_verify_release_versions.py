@@ -105,10 +105,27 @@ def _repo_root_commit() -> str:
     return result.stdout.strip().splitlines()[-1]
 
 
+def _is_shallow_repository() -> bool:
+    result = subprocess.run(  # noqa: S603 - fixed argument array
+        ["git", "rev-parse", "--is-shallow-repository"],  # noqa: S607 - git resolved via PATH
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip() == "true"
+
+
 def test_tag_unreachable_from_ref_fails_closed() -> None:
     # HEAD is a descendant of the repo's root commit, not the other way
     # around, so HEAD is provably NOT an ancestor of the root commit: a
     # real, reliable failure case with no network or remote dependency.
+    # This only holds with full history: CI's default (shallow, depth-1)
+    # checkout collapses "the root commit" to HEAD itself, which trivially
+    # IS its own ancestor, so skip there rather than assert something the
+    # shallow clone cannot actually test.
+    if _is_shallow_repository():
+        pytest.skip("requires full git history (fetch-depth: 0); repo checkout is shallow")
     root_commit = _repo_root_commit()
     result = run(
         [
