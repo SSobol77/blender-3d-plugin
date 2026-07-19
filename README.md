@@ -5,10 +5,6 @@ Professional plugin for preparing 3D assets for mobile games in Blender.
 ![Blender Mobile 3D](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-green.svg)
-![Hermes](https://img.shields.io/badge/Hermes-compatible-lightgrey.svg)
-![Claude%20Code](https://img.shields.io/badge/Claude%20Code-supported-lightgrey.svg)
-![Codex%20CLI](https://img.shields.io/badge/Codex%20CLI-supported-lightgrey.svg)
-![Kimi](https://img.shields.io/badge/Kimi%20K2-supported-lightgrey.svg)
 [![Node.js Version](https://img.shields.io/badge/Node.js-22-brightgreen.svg)](https://nodejs.org/en)
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/SSobol77/astradesk/actions)
 
