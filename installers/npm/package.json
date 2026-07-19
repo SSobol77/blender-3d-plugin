@@ -11,6 +11,6 @@
   "scripts": {
     "lint": "echo lint",
     "test": "node --test",
-    "pack": "npm pack --dry-run"
+    "pack": "npm pack"
   }
 }
