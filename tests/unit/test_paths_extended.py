@@ -13,7 +13,9 @@ from blender_mobile_3d.core.errors import PathSafetyError
 from blender_mobile_3d.core.paths import project_root_from_blend, safe_join
 
 
-def test_project_root_from_blend_falls_back_to_cwd(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_project_root_from_blend_falls_back_to_cwd(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.delenv("BM3D_BLEND_PATH", raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(project_root_from_blend, "__module__", "_tests_fake")
@@ -24,7 +26,9 @@ def test_project_root_from_blend_falls_back_to_cwd(monkeypatch: pytest.MonkeyPat
 def test_project_root_from_blend_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("BM3D_BLEND_PATH", raising=False)
     fake_bpy = types.ModuleType("bpy")
-    fake_bpy.context = types.SimpleNamespace(blend_data=types.SimpleNamespace(filepath=str(tmp_path / "a.blend")))
+    fake_bpy.context = types.SimpleNamespace(
+        blend_data=types.SimpleNamespace(filepath=str(tmp_path / "a.blend"))
+    )
     p = project_root_from_blend()
     assert p == tmp_path
 

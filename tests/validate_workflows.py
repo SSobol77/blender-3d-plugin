@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate exported mobile asset manifests and blend files."""
+
 import argparse
 import json
 import os

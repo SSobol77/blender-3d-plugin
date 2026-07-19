@@ -11,6 +11,7 @@ if False:  # pragma: no cover
     try:
         from bpy.types import Context as ContextType  # type: ignore
         from bpy.types import Scene as SceneType  # type: ignore
+
         Context = ContextType  # type: ignore[misc,assignment]
         Scene = SceneType  # type: ignore[misc,assignment]
     except Exception:

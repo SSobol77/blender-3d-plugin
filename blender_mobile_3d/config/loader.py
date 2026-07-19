@@ -10,7 +10,9 @@ from blender_mobile_3d.core.errors import ConfigurationError
 
 
 DEFAULT_PRESETS_DIR = Path(__file__).resolve().parent.parent.parent / "presets"
-DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parent.parent.parent / "schemas" / "preset.schema.json"
+DEFAULT_SCHEMA_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "schemas" / "preset.schema.json"
+)
 
 
 def load_preset(path: str | Path) -> dict[str, Any]:

@@ -20,7 +20,9 @@ def export_for_target(target: str, output_dir: Path) -> dict[str, Any]:
     if filename.suffix == ".glb":
         bpy.ops.export_scene.gltf(filepath=str(filename), export_format="GLB")
     else:
-        bpy.ops.export_scene.fbx(filepath=str(filename), use_selection=False, apply_scale_options="FBX_SCALE_ALL")
+        bpy.ops.export_scene.fbx(
+            filepath=str(filename), use_selection=False, apply_scale_options="FBX_SCALE_ALL"
+        )
 
     return {
         "target": target,

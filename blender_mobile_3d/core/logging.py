@@ -7,7 +7,16 @@ from typing import Any, List
 
 
 class Diagnostic:
-    def __init__(self, code: str, severity: str, explanation: str, affected: str, measured: Any, limit: Any, remediation: str):
+    def __init__(
+        self,
+        code: str,
+        severity: str,
+        explanation: str,
+        affected: str,
+        measured: Any,
+        limit: Any,
+        remediation: str,
+    ):
         self.code = code
         self.severity = severity
         self.explanation = explanation

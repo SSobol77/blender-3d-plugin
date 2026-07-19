@@ -91,7 +91,11 @@ def measure_scene(scene: Any) -> Dict[str, Any]:
                 if getattr(mesh, "uv_layers", None):
                     summary["uv_map_count"] += len(getattr(mesh, "uv_layers", []) or [])
 
-                summary["shape_key_count"] += len(getattr(mesh, "shape_keys", {}).key_blocks) - 1 if getattr(mesh, "shape_keys", None) else 0
+                summary["shape_key_count"] += (
+                    len(getattr(mesh, "shape_keys", {}).key_blocks) - 1
+                    if getattr(mesh, "shape_keys", None)
+                    else 0
+                )
 
             for modifier in getattr(obj, "modifiers", []) or []:
                 modifiers.append(modifier.type)

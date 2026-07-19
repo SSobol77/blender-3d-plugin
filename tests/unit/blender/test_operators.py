@@ -137,14 +137,22 @@ def _fake_scene():
 
 def test_lod_chain(monkeypatch):
     import blender_mobile_3d.operators.generate_lod as g
-    monkeypatch.setattr("blender_mobile_3d.operators.register.get_context", lambda: SimpleNamespace(scene=_fake_scene()))
+
+    monkeypatch.setattr(
+        "blender_mobile_3d.operators.register.get_context",
+        lambda: SimpleNamespace(scene=_fake_scene()),
+    )
     chain = g.generate_lod("Player")
     assert isinstance(chain, list)
 
 
 def test_export_unity(monkeypatch, tmp_path: Path):
     import blender_mobile_3d.operators.export as e
-    monkeypatch.setattr("blender_mobile_3d.operators.register.get_context", lambda: SimpleNamespace(scene=_fake_scene()))
+
+    monkeypatch.setattr(
+        "blender_mobile_3d.operators.register.get_context",
+        lambda: SimpleNamespace(scene=_fake_scene()),
+    )
     out = e.export_for_target("unity", tmp_path)
     assert out["target"] == "unity"
     assert out["format"] == "FBX"
@@ -155,6 +163,7 @@ def test_prepare_scene_sets_units(monkeypatch):
 
     ctx = SimpleNamespace(scene=_fake_scene())
     import blender_mobile_3d.operators.register as _reg
+
     monkeypatch.setattr(_reg, "get_context", lambda: ctx)
     res = prepare_scene()
     assert res["unit_scale"] == 0.01

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Background-mode CLI for blender_mobile_3d."""
+
 from __future__ import annotations
 
 import argparse
@@ -40,7 +41,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "print-schema":
-        schema_path = Path(args.schema) if args.schema else Path(__file__).resolve().parent.parent / "schemas" / "preset.schema.json"
+        schema_path = (
+            Path(args.schema)
+            if args.schema
+            else Path(__file__).resolve().parent.parent / "schemas" / "preset.schema.json"
+        )
         print(schema_path.read_text(encoding="utf-8"))
         return 0
 

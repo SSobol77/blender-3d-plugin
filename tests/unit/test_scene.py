@@ -6,7 +6,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from blender_mobile_3d.core.scene import measure_mesh, measure_scene, scene_metrics, texture_dimensions
+from blender_mobile_3d.core.scene import (
+    measure_mesh,
+    measure_scene,
+    scene_metrics,
+    texture_dimensions,
+)
 
 
 def test_texture_dimensions_none():

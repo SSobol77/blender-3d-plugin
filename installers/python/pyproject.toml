@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "blender-mobile-3d"
 version = "1.0.0"
@@ -7,19 +11,14 @@ requires-python = ">=3.11"
 license = "GPL-2.0-only"
 authors = [{name = "SSobol77"}]
 
+[project.scripts]
+blender-mobile-3d = "blender_mobile_3d_installer.commands:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
 
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "S"]
-
-[tool.mypy]
-python_version = "311"
-strict = true
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

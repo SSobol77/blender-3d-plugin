@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Headless add-on install and registration smoke test."""
+
 from pathlib import Path
 
 try:

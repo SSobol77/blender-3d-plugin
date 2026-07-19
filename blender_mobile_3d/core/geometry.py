@@ -18,7 +18,10 @@ def count_triangles(mesh: Any) -> int:
     loop_triangles = getattr(mesh, "loop_triangles", None)
     if loop_triangles is not None:
         return len(loop_triangles)
-    return sum(max(1, len(getattr(polygon, "vertices", [])) - 2) for polygon in getattr(mesh, "polygons", []))
+    return sum(
+        max(1, len(getattr(polygon, "vertices", [])) - 2)
+        for polygon in getattr(mesh, "polygons", [])
+    )
 
 
 def measure_mesh(mesh: Any) -> dict[str, int]:
@@ -64,7 +67,10 @@ def object_world_bounds(obj: Any) -> tuple[float, float, float, float, float, fl
     ys = [float(v.y) for v in corners]
     zs = [float(v.z) for v in corners]
     return (
-        min(xs), max(xs),
-        min(ys), max(ys),
-        min(zs), max(zs),
+        min(xs),
+        max(xs),
+        min(ys),
+        max(ys),
+        min(zs),
+        max(zs),
     )

@@ -23,7 +23,9 @@ class GodotExporter(BaseExporter):
 class UnityExporter(BaseExporter):
     def export(self, context: Any, output_dir: Path) -> dict[str, Any]:
         path = output_dir / "unity_asset.fbx"
-        bpy.ops.export_scene.fbx(filepath=str(path), use_selection=False, apply_scale_options="FBX_SCALE_ALL")  # type: ignore[name-defined]
+        bpy.ops.export_scene.fbx(
+            filepath=str(path), use_selection=False, apply_scale_options="FBX_SCALE_ALL"
+        )  # type: ignore[name-defined]
         return {"target": "unity", "format": "FBX", "path": str(path)}
 
 

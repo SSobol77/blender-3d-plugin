@@ -54,7 +54,9 @@ addons_dir.mkdir(parents=True, exist_ok=True)
 bpy.ops.preferences.addon_install(filepath=zip_path)
 bpy.ops.preferences.addon_enable(module='blender_mobile_3d')
 """
-    os.system(f"BLENDER_USER_CONFIG=/tmp/blender-ci /usr/local/bin/blender --background --factory-startup --python-expr '{install_script}'")
+    os.system(
+        f"BLENDER_USER_CONFIG=/tmp/blender-ci /usr/local/bin/blender --background --factory-startup --python-expr '{install_script}'"
+    )
 
     scene_script = """
 import bpy, sys

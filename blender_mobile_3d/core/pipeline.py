@@ -56,7 +56,9 @@ class Pipeline:
                 self.output_dir / f"{self.preset.target}_mobile.zip",
             )
 
-        return PipelineResult(passed=self.report.passed, report=self.report.to_dict(), artifacts=artifacts)
+        return PipelineResult(
+            passed=self.report.passed, report=self.report.to_dict(), artifacts=artifacts
+        )
 
     def _collect_metrics(self, scene: Any) -> dict[str, Any]:
         if scene is None:
@@ -68,12 +70,15 @@ class Pipeline:
         issues = engine.validate_metrics(metrics)
         for issue in issues:
             from blender_mobile_3d.core.logging import Diagnostic
+
             self.report.add(Diagnostic(**issue))
 
     def _export(self, context: Any, scene: Any) -> list[str]:  # pragma: no cover - adapter boundary
         raise NotImplementedError("Export adapters implement actual export operations.")
 
-    def _build_manifest(self, metrics: dict[str, Any], report: dict[str, Any], artifacts: list[str]) -> dict[str, Any]:
+    def _build_manifest(
+        self, metrics: dict[str, Any], report: dict[str, Any], artifacts: list[str]
+    ) -> dict[str, Any]:
         return {
             "schema_version": "1.0.0",
             "plugin_version": self.preset.plugin_version,

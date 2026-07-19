@@ -50,4 +50,5 @@ else:
     def unregister() -> None:  # type: ignore
         pass
 
+
 __all__ = ["__version__", "register", "unregister", "bl_info"]
