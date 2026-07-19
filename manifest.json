@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "plugin_version": "1.0.0",
+  "preset": "low_poly",
+  "target": "godot",
+  "limits": {
+    "tri_limit": 120,
+    "tex_max": 512,
+    "material_limit": 4,
+    "bone_limit": 60
+  },
+  "export_options": {},
+  "paths": {
+    "output_relative": "."
+  },
+  "metrics": {
+    "object_count": 0,
+    "mesh_count": 0,
+    "triangle_count": 0,
+    "material_slots": 0,
+    "unique_materials": 0,
+    "texture_count": 0,
+    "texture_dimensions": [],
+    "uv_map_count": 0,
+    "armature_count": 0,
+    "bone_count": 0,
+    "deform_bone_count": 0,
+    "action_count": 0,
+    "shape_key_count": 0,
+    "modifier_count": 0,
+    "modifier_types": [],
+    "unapplied_transforms": 0,
+    "bounding_box": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "validation": {
+    "passed": true,
+    "diagnostics": []
+  },
+  "artifacts": []
+}

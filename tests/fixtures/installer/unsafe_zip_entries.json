@@ -1,0 +1,7 @@
+{
+  "description": "Each list is a set of ZIP member names that a compliant zip-safety validator must reject. Both installer test suites build a ZIP containing these entries (plus a harmless blender_mobile_3d/__init__.py) and assert validation fails.",
+  "absolute_path": ["/etc/passwd"],
+  "parent_traversal": ["blender_mobile_3d/../../etc/passwd"],
+  "unexpected_top_level": ["not_the_addon/__init__.py"],
+  "windows_absolute": ["C:\\Windows\\System32\\evil.dll"]
+}

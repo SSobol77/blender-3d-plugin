@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "artifacts": {
+    "extension": {
+      "filename": "blender_mobile_3d-1.0.0.zip",
+      "url": "https://example.invalid/blender_mobile_3d-1.0.0.zip",
+      "sha256": "not-a-valid-sha256",
+      "size": -1
+    }
+  }
+}

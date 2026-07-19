@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "plugin_version": "1.0.0",
+  "preset": "environment",
+  "target": "unreal",
+  "limits": {
+    "tri_limit": 300,
+    "tex_max": 1024,
+    "material_limit": 6,
+    "bone_limit": 0
+  },
+  "paths": {
+    "use_project_output": true,
+    "output_relative": "export/mobile"
+  },
+  "export": {
+    "apply_scale": true,
+    "triangulate": false,
+    "bake_animation": false,
+    "uv_requirements": "at_least_one"
+  }
+}

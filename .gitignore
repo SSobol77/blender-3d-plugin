@@ -1,0 +1,14 @@
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+node_modules/
+*.tgz
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+regression.log

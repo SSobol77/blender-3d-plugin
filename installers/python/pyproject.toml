@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blender-mobile-3d"
+version = "1.0.0"
+description = "Secure installer and command-line manager for Blender Mobile 3D"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-2.0-only"
+authors = [{name = "SSobol77"}]
+
+[project.scripts]
+blender-mobile-3d = "blender_mobile_3d_installer.commands:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"blender_mobile_3d_installer.data" = ["*.py", "*.json"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

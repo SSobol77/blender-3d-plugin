@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "plugin_version": "1.0.0",
+  "preset": "fx",
+  "target": "kotlin",
+  "limits": {
+    "tri_limit": 150,
+    "tex_max": 512,
+    "material_limit": 4,
+    "bone_limit": 0
+  },
+  "paths": {
+    "use_project_output": true,
+    "output_relative": "export/mobile"
+  },
+  "export": {
+    "apply_scale": true,
+    "triangulate": false,
+    "bake_animation": false,
+    "uv_requirements": "none_required"
+  }
+}
