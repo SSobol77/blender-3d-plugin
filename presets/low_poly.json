@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "plugin_version": "1.0.0",
+  "preset": "low_poly",
+  "target": "godot",
+  "limits": {
+    "tri_limit": 120,
+    "tex_max": 512,
+    "material_limit": 4,
+    "bone_limit": 60
+  },
+  "paths": {
+    "use_project_output": true,
+    "output_relative": "export/mobile"
+  },
+  "export": {
+    "apply_scale": true,
+    "triangulate": false,
+    "bake_animation": true,
+    "uv_requirements": "at_least_one"
+  }
+}

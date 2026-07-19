@@ -3,21 +3,36 @@ name: blender-mobile-3d-plugin
 description: "Produkcyjne przygotowywanie assetow 3D do gier mobilnych w Blenderze. Rozszerzenie istniejącego pluginu blender-mcp o profile eksportu do Godot, Unity, UE 5.4, Flutter oraz Java/Kotlin. Uzywa istniejącego TCP serwera blender-mcp na porcie 9876."
 version: 0.1.0
 author: community
-license: MIT
+license: GPL-2.0-only
 platforms: [linux, macos, windows]
-tags: [blender, 3d, mobile, godot, unity, unreal, flutter, kotlin, android, game-assets, export]
 requires:
   commands: ["blender"]
-  skills: ["blender-mcp"]
+
 ---
 
 # Blender Mobile 3D Plugin
 
-Wtyczka produkcyjna przygotowujaca assety 3D do gier mobilnych.
-Jest **rozszerzeniem** pluginu `blender-mcp` i wymaga:
-- Blender 5.2.0 LTS
-- zainstalowanego addonu `blender_mcp_addon.py`
-- uruchomionego serwera TCP na porcie 9876 wewnątrz Blendera
+Agent-neutral core for preparing, validating, and exporting Blender assets for mobile games.
+
+## Non-goals
+
+This is not only a Hermes skill. The Blender-independent core and Blender-specific operators can be used directly from Blender UI, CLI, scripts, or adapters.
+
+## Compatibility
+
+See `docs/en/full-docs.md` for the supported Blender/Python matrix.
+
+## Safety
+
+- Prefer explicit output paths inside the project directory.
+- Do not pass untrusted file paths or blend files to `blender-mcp` or background mode without review.
+- Network exposure: if using `blender-mcp`, default to localhost only.
+
+## See also
+
+- `blender_mobile_3d/` production package
+- `addon.py` Blender add-on entrypoint
+- `docs/en/full-docs.md`
 
 ## Wymagania wstepne
 
