@@ -8,6 +8,7 @@ import { doctor } from "./commands/doctor.js";
 import { listBlenders } from "./commands/list-blenders.js";
 import { version } from "./commands/version.js";
 import { help } from "./commands/help.js";
+import { INVALID_ARGUMENTS } from "./exitCodes.js";
 
 const commands = {
   install,
@@ -19,15 +20,15 @@ const commands = {
   help,
 };
 
-export async function main() {
-  const args = process.argv.slice(2);
-  const name = args[0];
+export async function main(argv = process.argv.slice(2)) {
+  const name = argv[0];
+  if (name === undefined || name === "help" || name === "--help" || name === "-h") {
+    return help();
+  }
   const fn = commands[name];
   if (!fn) {
-    console.error(`Unknown command: ${name}`);
-    process.exitCode = 2;
-    return;
+    process.stderr.write(`error: unknown command: ${name}\n`);
+    return INVALID_ARGUMENTS;
   }
-  const code = await fn(args.slice(1));
-  if (typeof code === "number") process.exitCode = code;
+  return fn(argv.slice(1));
 }

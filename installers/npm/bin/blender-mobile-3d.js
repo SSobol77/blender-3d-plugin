@@ -1,3 +1,7 @@
 #!/usr/bin/env node
+import process from "node:process";
+
 import { main } from "../src/main.js";
-await main();
+
+const code = await main();
+process.exitCode = typeof code === "number" ? code : 0;

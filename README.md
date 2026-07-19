@@ -1,3 +1,11 @@
+<p align="center">
+  <img
+    src="assets/branding/blender-mobile-3d-logo.png"
+    alt="Blender Mobile 3D logo"
+    width="240"
+  />
+</p>
+
 # blender-3d-plugin
 
 Professional plugin for preparing 3D assets for mobile games in Blender.
@@ -52,4 +60,5 @@ blender-3d-plugin/
 ```
 
 Full documentation:
+
 - [Documentation (All languages)](docs/)

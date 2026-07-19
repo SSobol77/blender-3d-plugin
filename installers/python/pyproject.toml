@@ -20,6 +20,9 @@ dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"blender_mobile_3d_installer.data" = ["*.py", "*.json"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]

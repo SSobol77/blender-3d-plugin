@@ -1,16 +1,48 @@
 {
   "name": "@glaeron/blender-mobile-3d",
   "version": "1.0.0",
+  "description": "Secure installer and command-line manager for the Blender Mobile 3D add-on",
   "license": "GPL-2.0-only",
   "type": "module",
   "bin": {
     "blender-mobile-3d": "./bin/blender-mobile-3d.js"
   },
-  "files": ["bin", "src", "test"],
-  "engines": {"node": ">=20"},
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SSobol77/blender-3d-plugin.git",
+    "directory": "installers/npm"
+  },
+  "bugs": {
+    "url": "https://github.com/SSobol77/blender-3d-plugin/issues"
+  },
+  "homepage": "https://github.com/SSobol77/blender-3d-plugin#readme",
+  "keywords": [
+    "blender",
+    "installer",
+    "cli",
+    "mobile-3d",
+    "add-on"
+  ],
+  "author": "SSobol77",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "lint": "echo lint",
+    "lint": "eslint bin src test test-support",
     "test": "node --test",
     "pack": "npm pack"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.7.0"
   }
 }

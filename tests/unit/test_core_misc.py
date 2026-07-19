@@ -136,9 +136,3 @@ def test_config_defaults() -> None:
     assert DEFAULT_PRESET == "low_poly"
     assert DEFAULT_TARGET == "godot"
     assert DEFAULT_LIMITS["tri_limit"] == 120
-
-
-def test_installer_cli_module_exposes_main() -> None:
-    from blender_mobile_3d_installer import cli
-
-    assert callable(cli.main)

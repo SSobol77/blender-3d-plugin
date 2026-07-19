@@ -39,6 +39,13 @@ testpaths = ["tests", "installers/python/tests"]
 
 [tool.coverage.run]
 branch = true
+omit = [
+    # Executes only inside Blender's own Python interpreter via
+    # blender_ops._run_helper; proven by scripts/blender_regression.py and
+    # the manual E2E runs recorded in docs/installer-contract.md, not by
+    # pytest-cov, which never runs inside bpy.
+    "*/blender_mobile_3d_installer/data/blender_helper.py",
+]
 
 [tool.coverage.report]
 exclude_also = [
