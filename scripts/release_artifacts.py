@@ -19,7 +19,10 @@ import zipfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-VERSION = "1.0.0"
+
+sys.path.insert(0, str(REPO_ROOT))
+from blender_mobile_3d.version import VERSION  # noqa: E402
+
 PACKAGE_NAME = "blender_mobile_3d"
 MINIMUM_BLENDER_VERSION = "4.3.0"
 RELEASE_URL_BASE = "https://github.com/SSobol77/blender-3d-plugin/releases/download/v" + VERSION
