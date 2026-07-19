@@ -498,3 +498,26 @@ def test_release_md_step_order_matches_required_sequence() -> None:
     ]
     positions = [text.index(heading) for heading in required_headings]
     assert positions == sorted(positions), "release order headings must appear in sequence"
+
+
+def test_release_artifacts_are_uploaded_as_a_flat_bundle(
+    release_workflow: dict[str, Any],
+) -> None:
+    build_steps = release_workflow["jobs"]["build"]["steps"]
+
+    stage = next(step for step in build_steps if step.get("name") == "Stage flat release bundle")
+    stage_script = stage["run"]
+
+    assert "mkdir -p release-bundle" in stage_script
+    assert "dist/blender_mobile_3d-*.zip" in stage_script
+    assert "installers/python/dist/*.whl" in stage_script
+    assert "installers/npm/*.tgz" in stage_script
+
+    upload = next(
+        step
+        for step in build_steps
+        if isinstance(step.get("uses"), str) and step["uses"].startswith("actions/upload-artifact@")
+    )
+
+    assert upload["with"]["name"] == "release-artifacts"
+    assert upload["with"]["path"] == "release-bundle/*"
