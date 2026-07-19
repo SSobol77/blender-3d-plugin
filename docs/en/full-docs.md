@@ -1,14 +1,23 @@
 # Documentation - Blender Mobile 3D Plugin (EN)
 
 ## Table of Contents
-1. [Overview](#1-overview)
-2. [Installation](#2-installation)
-3. [Quick_Start](#3-quick-start)
-4. [Mobile_Profiles](#4-mobile-profiles)
-5. [Workflows](#5-workflows)
-6. [Scripts](#6-scripts)
-7. [Troubleshooting](#7-troubleshooting)
-8. [Multi_Agent_Support](#8-multi-agent-support)
+
+- [Documentation - Blender Mobile 3D Plugin (EN)](#documentation---blender-mobile-3d-plugin-en)
+  - [Table of Contents](#table-of-contents)
+  - [1. Overview](#1-overview)
+  - [2. Installation](#2-installation)
+    - [Requirements](#requirements)
+    - [Steps](#steps)
+  - [3. Quick Start](#3-quick-start)
+    - [Scene staging](#scene-staging)
+    - [Create mesh](#create-mesh)
+    - [LOD chain](#lod-chain)
+    - [Export](#export)
+  - [4. Mobile Profiles](#4-mobile-profiles)
+  - [5. Workflows](#5-workflows)
+  - [6. Scripts](#6-scripts)
+  - [7. Troubleshooting](#7-troubleshooting)
+  - [8. Multi-Agent Support](#8-multi-agent-support)
 
 ---
 
@@ -21,25 +30,32 @@ Hermes, Claude Code, Codex CLI, Kimi.
 ## 2. Installation
 
 ### Requirements
+
 - Blender 5.2.0 LTS or 4.3+
 - `blender-mcp` with TCP server on port 9876
 - Hermes Agent / Claude Code / Codex CLI / Kimi
 
 ### Steps
+
 1. Clone repository:
+
    ```
    git clone https://github.com/SSobol77/blender-3d-plugin.git
    cd blender-3d-plugin
    ```
+
 2. Install Hermes skill:
+
    ```
    cp -r hermes-skill ~/.hermes/skills/creative/blender-mobile-3d-plugin
    ```
+
 3. In Blender install `blender_mcp_addon.py`:
    - Edit > Preferences > Add-ons > Install
    - Enable "Interface: Blender MCP"
    - N-panel > BlenderMCP > Start Server
 4. Verify connection:
+
    ```
    nc -z -w2 localhost 9876 && echo "OPEN" || echo "CLOSED"
    ```
@@ -47,6 +63,7 @@ Hermes, Claude Code, Codex CLI, Kimi.
 ## 3. Quick Start
 
 ### Scene staging
+
 ```python
 import bpy
 bpy.ops.object.select_all(action='SELECT')
@@ -57,18 +74,21 @@ bpy.context.scene.render.engine = 'BLENDER_EEVEE_NEXT'
 ```
 
 ### Create mesh
+
 ```python
 import bpy
 bpy.ops.mesh.primitive_uv_sphere_add(radius=0.5, location=(0,0,0))
 ```
 
 ### LOD chain
+
 ```python
 from scripts.low_poly_lod import apply_lod
 apply_lod("Sphere", lod_ratios=(0.6, 0.3, 0.15))
 ```
 
 ### Export
+
 ```python
 from scripts.export_mobile import export_for_stack
 export_for_stack("godot")
@@ -87,6 +107,7 @@ export_for_stack("godot")
 ## 5. Workflows
 
 Templates for each stack in `workflows/`:
+
 - `godot_mobile.json`
 - `unity_mobile.json`
 - `ue5_mobile.json`
@@ -124,6 +145,7 @@ Templates for each stack in `workflows/`:
 | Kimi        | bash/python or TCP socket           | `/tmp/kimi_<stack>/` |
 
 Rules:
+
 - One action on port 9876 at a time
 - Each agent uses its own temp folder
 - Plugin is `blender-mcp`-agnostic at execution level

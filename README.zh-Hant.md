@@ -7,7 +7,7 @@
 <h1 align="center">Blender Mobile 3D Plugin</h1>
 
 <p align="center">
-  Production-ready Blender add-on for preparing and exporting optimized 3D assets for mobile games.
+  可用於正式環境的 Blender 外掛，用於準備及匯出針對行動遊戲最佳化的 3D 資產。
 </p>
 
 <p align="center">
@@ -22,7 +22,6 @@
   </a>
 </p>
 
-# Blender Mobile 3D Plugin
 
 [正體中文] 適用於手機遊戲的 Blender 3D 資源準備外掛。
 

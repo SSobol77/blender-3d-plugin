@@ -7,7 +7,7 @@
 <h1 align="center">Blender Mobile 3D Plugin</h1>
 
 <p align="center">
-  Production-ready Blender add-on for preparing and exporting optimized 3D assets for mobile games.
+  Gotowy do zastosowań produkcyjnych dodatek do Blendera do przygotowywania i eksportowania zoptymalizowanych zasobów 3D do gier mobilnych.
 </p>
 
 <p align="center">
@@ -22,7 +22,6 @@
   </a>
 </p>
 
-# Blender Mobile 3D Plugin
 
 [Polski] Plugin do przygotowywania assetów 3D do gier mobilnych w Blenderze.
 
