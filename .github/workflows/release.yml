@@ -24,6 +24,12 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.13"
+  # Release-critical Node/npm toolchain. Pinned to exact versions (never
+  # `lts/*`, `latest`, or a floating major) so release artifacts are
+  # reproducible; 22.14.0 / 11.5.1 are also the minimums required for
+  # future npm Trusted Publishing (OIDC), see docs/RELEASE.md.
+  NODE_VERSION: "22.14.0"
+  NPM_VERSION: "11.5.1"
 
 jobs:
   validate-version:
@@ -114,9 +120,15 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: lts/*
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: installers/npm/package-lock.json
+      - name: Pin npm CLI version
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+      - name: Print pinned Node.js and npm versions
+        run: |
+          node --version
+          npm --version
       - working-directory: installers/npm
         run: npm ci
       - name: ESLint
@@ -140,9 +152,16 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: lts/*
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Pin npm CLI version
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+      - name: Print pinned Node.js and npm versions
+        run: |
+          node --version
+          npm --version
       - run: python -m pip install -q -e '.[dev]' -e installers/python
-      - run: python -m pip install -q build twine
+      - name: Install pinned release-critical build tooling
+        run: python -m pip install -q -r scripts/release-requirements.txt
       - name: Build canonical Blender add-on ZIP + checksum + release manifest
         run: python scripts/release_artifacts.py
       - name: Verify release-manifest agrees with the validated version
@@ -153,8 +172,8 @@ jobs:
       - name: Verify ZIP SHA-256 checksum
         working-directory: dist
         run: sha256sum -c "blender_mobile_3d-${{ needs.validate-version.outputs.version }}.zip.sha256"
-      - name: Build Python wheel and sdist (installer package)
-        run: python -m build installers/python
+      - name: Build Python wheel and sdist (installer package, pinned tooling, no isolation)
+        run: python -m build --no-isolation installers/python
       - name: twine check
         run: python -m twine check installers/python/dist/*
       - name: Build npm tarball
@@ -208,7 +227,13 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: lts/*
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Pin npm CLI version
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+      - name: Print pinned Node.js and npm versions
+        run: |
+          node --version
+          npm --version
       - run: python -m pip install -q -e '.[dev]'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -223,9 +248,22 @@ jobs:
           cp dist-download/release-manifest.json dist/
           cp dist-download/*.whl dist-download/*.tar.gz installers/python/dist/
           cp dist-download/*.tgz installers/npm/
-      - name: Install Blender 4.3.2
+      - name: Download and verify Blender 4.3.2 (pinned SHA-256, fail closed)
+        env:
+          # Pinned expected digest for blender-4.3.2-linux-x64.tar.xz.
+          # Independently verified against Blender's own published
+          # https://download.blender.org/release/Blender4.3/blender-4.3.2.sha256
+          # manifest AND by a separate local download + sha256sum/md5sum of
+          # the archive itself (both matched exactly; see PR history). This
+          # value is pinned here rather than re-fetched from
+          # download.blender.org at release time, since re-downloading the
+          # checksum from the same server as the archive it verifies would
+          # provide no protection if that server were ever compromised.
+          BLENDER_TARBALL_SHA256: "4da1c956673c0485e63054e563ee69198cc8f80d8157dd7592dffc8a6a5592e6"
         run: |
+          set -euo pipefail
           wget -q https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          echo "${BLENDER_TARBALL_SHA256}  blender-4.3.2-linux-x64.tar.xz" | sha256sum -c -
           tar -xf blender-4.3.2-linux-x64.tar.xz
           sudo mv blender-4.3.2-linux-x64 /opt/blender
           sudo ln -sf /opt/blender/blender /usr/local/bin/blender

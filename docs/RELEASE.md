@@ -16,7 +16,14 @@ its visibility.
   verification step (tests, lint, type checks, the Blender headless
   regression, the installer end-to-end lifecycle) but **never** creates a
   GitHub Release and **never** publishes to PyPI. Use this to dry-run the
-  entire pipeline against any branch before cutting a tag.
+  entire pipeline before cutting a tag. **GitHub only exposes manual
+  dispatch for a workflow once its `workflow_dispatch` trigger exists on
+  the repository's default branch** — this is a GitHub Actions platform
+  constraint, not a choice made here, and it applies to the `gh` CLI and
+  the API exactly as it does to the Actions tab UI. Concretely: `release.yml`
+  cannot be dispatched from PR #2's branch before that PR is merged; the
+  first `workflow_dispatch` run is only possible once the workflow file is
+  on `main`. See step 4 below.
 - **A pushed tag matching `v<major>.<minor>.<patch>`** — runs the same
   build and verification, and if (and only if) every prior job succeeds,
   also creates the GitHub Release and publishes the Python package to
@@ -30,22 +37,36 @@ there is no code path by which a manual dispatch can publish anything.
 npm publishing is **not** part of this workflow. The first publication of
 `@glaeron/blender-mobile-3d` must be done manually with 2FA (npm requires
 this for the first publish of a new package, and Trusted Publishing can
-only be configured for a package that already exists). See step 7 below
-and [Configuring npm Trusted Publishing](#configuring-npm-trusted-publishing-after-the-first-manual-publish).
+only be configured for a package that already exists). See step 9 below
+and [step 10, Configure npm Trusted Publishing for future versions](#10-configure-npm-trusted-publishing-for-future-versions).
 
 ## Release order
 
 Follow these steps **in order**. Do not skip ahead — later steps assume
 earlier ones are verified.
 
-### 1. Merge release automation
+### 1. Merge release automation (PR #2) into `main`
 
 Merge the PR that adds `.github/workflows/release.yml`,
-`scripts/verify_release_versions.py`, and this document into `main`.
-Confirm the regular CI workflow (`.github/workflows/ci.yml`) is green on
-`main` after the merge.
+`scripts/verify_release_versions.py`, `scripts/release-requirements.txt`,
+and this document into `main`. Confirm the regular CI workflow
+(`.github/workflows/ci.yml`) is green on `main` after the merge.
 
-### 2. Configure the PyPI pending trusted publisher
+**This step is a hard prerequisite for step 4.** GitHub will not offer
+`release.yml` for manual dispatch — in the Actions tab, via `gh workflow
+run`, or via the REST API — until its `workflow_dispatch` trigger exists
+on `main`. There is no way to dry-run this workflow from PR #2's branch
+before it is merged.
+
+### 2. Configure the `pypi` GitHub environment
+
+In the repository, create an **environment** named `pypi`
+(**Settings → Environments → New environment**). Optionally add required
+reviewers here for extra protection before the `publish-pypi` job can
+run; the workflow already restricts this environment to
+`id-token: write` and nothing else.
+
+### 3. Configure the PyPI pending trusted publisher
 
 Before any tag is pushed, register a **pending** trusted publisher on
 PyPI so the very first publish can use OIDC (no API token ever touches
@@ -64,29 +85,32 @@ this repository):
 3. Save it. PyPI will create the project automatically the first time a
    matching workflow run publishes to it — no manual `twine upload` and
    no long-lived API token are ever needed.
-4. In the GitHub repository, create an **environment** named `pypi`
-   (**Settings → Environments → New environment**). Optionally add
-   required reviewers here for extra protection before the `publish-pypi`
-   job can run; the workflow already restricts this environment to
-   `id-token: write` and nothing else.
 
-### 3. Run a `workflow_dispatch` dry run
+### 4. Run a `workflow_dispatch` dry run on `main`
 
-From the **Actions** tab, run **Release** via **Run workflow** against
-`main` (or the release branch, before merging, to validate the PR
-itself). Confirm:
+Only possible after step 1. From the **Actions** tab (or
+`gh workflow run release.yml --ref main`), run **Release** via
+**Run workflow** against `main`. Confirm:
 
 - version cross-file agreement check passes;
 - all tests, lint, type checks, and coverage gate pass;
 - the Blender headless regression and both installer E2E lifecycles pass;
 - artifacts (Blender ZIP, checksum, release manifest, wheel, sdist, npm
-  tarball) are attached to the run;
-- **no** GitHub Release or PyPI publish job ran (both should show as
-  skipped, since `github.event_name` was `workflow_dispatch`).
+  tarball) are attached to the run.
 
-Do not proceed to tagging until this run is fully green.
+### 5. Confirm the publishing jobs were skipped
 
-### 4. Create the `v1.0.0` tag
+In the same `workflow_dispatch` run from step 4, confirm both
+`github-release` and `publish-pypi` show as **skipped** (never
+"success" or "failure") in the run summary — since
+`github.event_name` was `workflow_dispatch`, not `push` on a tag, their
+`if:` guard never evaluates true. This is the concrete, observable proof
+that a manual dispatch cannot publish anything.
+
+Do not proceed to tagging until step 4's run is fully green and step 5
+is confirmed.
+
+### 6. Create the `v1.0.0` tag
 
 Tag the exact commit on `main` you intend to release, using an
 **annotated and signed** tag:
@@ -104,7 +128,7 @@ preferred for a v1.0.0 release.)
 
 Pushing the tag triggers `release.yml` in its full, publishing mode.
 
-### 5. Verify the GitHub Release
+### 7. Verify the GitHub Release
 
 Watch the workflow run to completion. Confirm the release at
 `https://github.com/SSobol77/blender-3d-plugin/releases/tag/v1.0.0` has:
@@ -123,7 +147,7 @@ curl -sSLO https://github.com/SSobol77/blender-3d-plugin/releases/download/v1.0.
 sha256sum -c blender_mobile_3d-1.0.0.zip.sha256
 ```
 
-### 6. Verify PyPI installation
+### 8. Verify PyPI installation
 
 ```bash
 python -m venv /tmp/verify-pypi
@@ -134,7 +158,7 @@ python -m venv /tmp/verify-pypi
 Confirm the installed version prints `1.0.0` and `doctor --json` /
 `list-blenders --json` run without error.
 
-### 7. Manually publish the first npm package (with 2FA)
+### 9. Manually publish the first npm package (with 2FA)
 
 This is the one release step the automation deliberately does **not**
 perform, because npm requires interactive 2FA for the first publish of a
@@ -155,7 +179,7 @@ You will be prompted for your npm 2FA one-time code. Verify afterward:
 npm view @glaeron/blender-mobile-3d version   # expect 1.0.0
 ```
 
-### 8. Configure npm Trusted Publishing for future versions
+### 10. Configure npm Trusted Publishing for future versions
 
 Once the package exists, configure OIDC-based publishing so future
 versions (`v1.0.1`, `v1.1.0`, ...) can be published from CI without a
@@ -169,14 +193,16 @@ long-lived npm token:
    - **Workflow filename:** `release.yml`
    - **Environment name:** (optional) `npm`, if you add one.
 3. **Requirements:** npm Trusted Publishing requires **npm >= 11.5.1**
-   and **Node.js >= 22.14.0** in the publishing job. When this is added
-   to `release.yml` in a future PR, pin `actions/setup-node` to a
-   matching Node version and add `id-token: write` to that job's
-   permissions (mirroring the `publish-pypi` job's OIDC setup).
+   and **Node.js >= 22.14.0** in the publishing job.
+   `release.yml` already pins exactly these versions (`env.NODE_VERSION`
+   / `env.NPM_VERSION`) in `test-node`, `build`, and `blender-regression`;
+   the future npm-publish job should reuse those same two `env` values
+   rather than re-pinning separately, and add `id-token: write` to that
+   job's permissions (mirroring the `publish-pypi` job's OIDC setup).
 4. Add the actual `npm publish` step to `release.yml` only after this is
    configured; until then, npm publishing stays manual.
 
-### 9. Verify clean installations from PyPI and npm
+### 11. Verify clean installations from PyPI and npm
 
 As a final sanity check, from machines/containers with no prior
 project-specific state:

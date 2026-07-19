@@ -1,0 +1,15 @@
+# Pinned, exact-version release-critical Python build tooling for
+# .github/workflows/release.yml. These are the tools that produce the
+# immutable wheel/sdist artifacts attached to a GitHub Release and
+# published to PyPI, so they are pinned separately from
+# pyproject.toml's `dev` extras (which may float for day-to-day
+# development) and must never be installed as an unpinned/floating
+# range while building a release.
+#
+# Bump these deliberately, in a reviewed PR, verifying the new versions
+# against `python -m build --no-isolation` + `twine check` before
+# merging. Do not add unpinned entries here.
+build==1.5.0
+twine==6.2.0
+wheel==0.47.0
+setuptools==83.0.0
