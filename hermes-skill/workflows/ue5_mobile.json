@@ -1,0 +1,11 @@
+{
+  "stack": "unreal",
+  "version": "5.4",
+  "profile": "environment",
+  "export_dir": "/tmp/ue5_mobile",
+  "export_format": "GLB",
+  "tri_limit": 300,
+  "tex_max": 1024,
+  "lod_levels": 2,
+  "nanite": false
+}

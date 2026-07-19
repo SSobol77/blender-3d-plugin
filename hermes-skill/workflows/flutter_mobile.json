@@ -1,0 +1,10 @@
+{
+  "stack": "flutter",
+  "profile": "ui_3d",
+  "export_dir": "/tmp/flutter_mobile",
+  "export_format": "GLB",
+  "tri_limit": 80,
+  "tex_max": 1024,
+  "package": "assets/3d",
+  "naming": "snake_case"
+}

@@ -1,0 +1,9 @@
+{
+  "stack": "kotlin",
+  "profile": "low_poly",
+  "export_dir": "/tmp/kotlin_mobile",
+  "export_format": "GLB",
+  "tri_limit": 120,
+  "tex_max": 512,
+  "packages": ["com.studio.assets"]
+}

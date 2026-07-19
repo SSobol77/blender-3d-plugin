@@ -1,0 +1,10 @@
+{
+  "stack": "godot",
+  "profile": "low_poly",
+  "export_dir": "/tmp/godot_mobile",
+  "export_format": "GLB",
+  "tri_limit": 120,
+  "tex_max": 512,
+  "lod_levels": 3,
+  "root_name": "Character"
+}

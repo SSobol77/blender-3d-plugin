@@ -1,0 +1,11 @@
+{
+  "stack": "unity",
+  "profile": "character",
+  "export_dir": "/tmp/unity_mobile",
+  "export_format": "FBX",
+  "tri_limit": 200,
+  "tex_max": 512,
+  "lod_levels": 3,
+  "anim_fps": 30,
+  "root_name": "Character"
+}
