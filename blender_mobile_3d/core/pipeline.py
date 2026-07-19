@@ -11,9 +11,15 @@ from blender_mobile_3d.core.errors import ConfigurationError, ExportError, PathS
 from blender_mobile_3d.core.logging import Report
 from blender_mobile_3d.core.manifests import build_zip, sha256_file
 from blender_mobile_3d.core.metrics import SceneMetrics
-from blender_mobile_3d.core.pipeline import PipelineResult
 from blender_mobile_3d.core.scene import measure_scene
 from blender_mobile_3d.core.validation import ValidationEngine
+
+
+class PipelineResult:
+    def __init__(self, passed: bool, report: dict[str, Any], artifacts: list[str]) -> None:
+        self.passed = passed
+        self.report = report
+        self.artifacts = artifacts
 
 
 class Pipeline:
@@ -22,7 +28,7 @@ class Pipeline:
         self.output_dir = output_dir or preset.paths.output_relative
 
     def run(self, context: Any, dry_run: bool = True) -> PipelineResult:
-        report = Report()
+        self.report = Report()
 
         try:
             scene = context.scene
@@ -30,8 +36,7 @@ class Pipeline:
             scene = None
 
         metrics = self._collect_metrics(scene)
-        validation = self._validate(metrics)
-        report.add(validation)
+        self._validate(metrics)
 
         artifacts: list[str] = []
         if not dry_run and scene is not None:
@@ -40,7 +45,7 @@ class Pipeline:
             except Exception as exc:
                 raise ExportError(str(exc)) from exc
 
-        manifest = self._build_manifest(metrics, report.to_dict(), artifacts)
+        manifest = self._build_manifest(metrics, self.report.to_dict(), artifacts)
         manifest_path = self._write_manifest(manifest)
         artifacts.append(str(manifest_path))
 
@@ -51,20 +56,19 @@ class Pipeline:
                 self.output_dir / f"{self.preset.target}_mobile.zip",
             )
 
-        return PipelineResult(passed=report.passed, report=report.to_dict(), artifacts=artifacts)
+        return PipelineResult(passed=self.report.passed, report=self.report.to_dict(), artifacts=artifacts)
 
     def _collect_metrics(self, scene: Any) -> dict[str, Any]:
         if scene is None:
             return {}
         return measure_scene(scene)
 
-    def _validate(self, metrics: dict[str, Any]) -> Any:
+    def _validate(self, metrics: dict[str, Any]) -> None:
         engine = ValidationEngine(limits=self.preset.limits.__dict__)
         issues = engine.validate_metrics(metrics)
         for issue in issues:
             from blender_mobile_3d.core.logging import Diagnostic
-            report.add(Diagnostic(**issue))
-        return report
+            self.report.add(Diagnostic(**issue))
 
     def _export(self, context: Any, scene: Any) -> list[str]:  # pragma: no cover - adapter boundary
         raise NotImplementedError("Export adapters implement actual export operations.")

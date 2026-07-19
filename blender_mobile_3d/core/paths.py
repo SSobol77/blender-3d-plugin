@@ -22,8 +22,10 @@ def project_root_from_blend() -> Path:
 
 def safe_join(base: Path, child: str) -> Path:
     """Join child without escaping base."""
-    target = (base / child).resolve()
-    if not str(target).startswith(str(base.resolve())):
+    target = base / child
+    try:
+        target.relative_to(base.resolve())
+    except ValueError:
         raise PathSafetyError("Output path escapes project root")
     return target
 

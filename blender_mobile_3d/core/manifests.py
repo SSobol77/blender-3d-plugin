@@ -6,6 +6,7 @@ import hashlib
 import os
 import zipfile
 from pathlib import Path
+from typing import Any
 
 
 def sha256_file(path: Path) -> str:
@@ -34,3 +35,22 @@ def build_zip(export_dir: Path, members: list[Path], zip_path: Path) -> list[dic
                 }
             )
     return manifest
+
+
+def sig_hash(path: Path) -> str:
+    """Backward-compatible alias for `sha256_file`."""
+    return sha256_file(path)
+
+
+def write_artifact_manifest(members: list[Path]) -> dict[str, Any]:
+    manifest: list[dict[str, Any]] = []
+    for path in members:
+        data = path.read_bytes()
+        manifest.append(
+            {
+                "filename": path.name,
+                "bytes": str(len(data)),
+                "sha256": sha256_file(path),
+            }
+        )
+    return {"artifact_count": len(manifest), "artifacts": manifest}

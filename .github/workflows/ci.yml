@@ -8,9 +8,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  lint-and-unit:
+  fmt-lint-unit:
+    name: fmt / lint / typecheck / tests / coverage / build / release checks
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,11 +26,19 @@ jobs:
         with:
           node-version: "lts/*"
       - run: python -m pip install -q -e '.[dev]'
+      - run: ruff format --diff blender_mobile_3d tests scripts
       - run: ruff check blender_mobile_3d tests scripts
-      - run: mypy blender_mobile_3d --ignore-missing-imports || true
-      - run: pytest -q
+      - run: mypy blender_mobile_3d --ignore-missing-imports
+      - run: pytest -q --cov=blender_mobile_3d --cov-report=xml --cov-fail-under=80
+      - run: python -m zipfile -c dist/release-check.zip blender_mobile_3d
+      - run: python scripts/release_artifacts.py
+      - run: python scripts/verify_addon_state.py --zip dist/blender_mobile_3d-1.0.0.zip
+      - run: python scripts/verify_release_checks.py
+      - run: python -m zipfile -c dist/blender_mobile_3d-1.0.0.zip blender_mobile_3d || true
+      - run: python scripts/release_artifacts.py
 
   security:
+    name: security audit + secret scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,10 +46,12 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m pip install -q -e '.[dev]'
-      - run: pip-audit -q || true
+      - run: pip-audit -q
       - run: ruff check blender_mobile_3d tests scripts --select S
+      - run: test -z "$(grep -Rin --include='*.py' --include='*.json' --include='*.md' -E '' . || true)"
 
   blender-regression:
+    name: Blender headless add-on regression
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,4 +59,4 @@ jobs:
       - run: tar -xf blender-4.3.2-linux-x64.tar.xz
       - run: sudo mv blender-4.3.2-linux-x64 /opt/blender || true && ln -sf /opt/blender/blender /usr/local/bin/blender || true
       - run: python -m pip install -q -e '.[dev]'
-      - run: blender --background --python blender_mobile_3d/operators/register.py
+      - run: BLENDER_USER_CONFIG=/tmp/blender-ci blender --background --factory-startup --python scripts/smoke_test_blender.py --python scripts/verify_addon_state.py
